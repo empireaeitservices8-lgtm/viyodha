@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthShell, { Field, PasswordField, fieldClass, primaryBtn, focusRing, GREEN } from "@/components/AuthShell";
-
-/**
- * app/login/page.tsx
- * Connect `onSubmit` to your auth (NextAuth, Clerk, your own API, etc.).
- */
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,18 +16,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     const f = new FormData(e.currentTarget);
-    const email = String(f.get("email"));
+    const email = String(f.get("email")).trim();
     const password = String(f.get("password"));
 
     try {
-      // TODO: call your sign-in API here, e.g.
-      // const res = await fetch("/api/login", { method: "POST", body: JSON.stringify({ email, password }) });
-      // if (!res.ok) throw new Error("Wrong email or password.");
-      // router.push("/");
-      void email; void password;
-    } catch {
-      setError("The email or password is incorrect. Check them and try again.");
+      const user = await login(email, password);
+      if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/products");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "The email or password is incorrect.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -38,8 +40,8 @@ export default function LoginPage() {
     <AuthShell
       heading="Welcome back"
       intro="Sign in to reorder your favourite spices and track your orders."
-      perks={["Reorder in a few taps", "Track every order", "Save your delivery details"]}
-      formTitle="Sign in"
+      perks={["Reorder in a few taps", "Track every order live", "Save your delivery details"]}
+      formTitle="Sign in to Viyodha"
       footer={
         <>
           New to Viyodha?{" "}
@@ -51,17 +53,19 @@ export default function LoginPage() {
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate={false}>
         <Field label="Email">
-          <input name="email" type="email" required autoComplete="email" placeholder="you@company.com" className={fieldClass} />
+          <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" className={fieldClass} />
         </Field>
 
         <PasswordField label="Password" name="password" autoComplete="current-password" />
 
-        <p role="alert" aria-live="assertive" className={error ? "rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" : "sr-only"}>
-          {error}
-        </p>
+        {error && (
+          <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
 
         <button type="submit" disabled={loading} className={primaryBtn} style={{ backgroundColor: GREEN }}>
-          {loading ? "Signing in" : "Sign in"}
+          {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
     </AuthShell>

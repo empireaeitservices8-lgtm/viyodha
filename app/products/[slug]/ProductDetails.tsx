@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
-import { PRODUCTS, discountOf, type Product } from "@/lib/products";
-
-/**
- * app/products/[slug]/ProductDetails.tsx  (client component)
- * Interactive part of the product details page.
- */
+import { PRODUCTS, discountOf, type Product as StaticProduct } from "@/lib/products";
+import { api, getImageUrl, Review, Product as ApiProduct } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 const condensed = Barlow_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -18,21 +15,124 @@ const GREEN = "#1F4D1F";
 const TINT = "#EEF3EA";
 const RED = "#C8221E";
 
-export default function ProductDetails({ product }: { product: Product }) {
+type ProductDetailsProps = {
+  product: StaticProduct | ApiProduct;
+};
+
+export default function ProductDetails({ product: initialProduct }: ProductDetailsProps) {
+  const { user, refreshCartCount } = useAuth();
+  const [product, setProduct] = useState<StaticProduct | ApiProduct>(initialProduct);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [adding, setAdding] = useState(false);
 
-  const off = discountOf(product);
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
+
+  const off = discountOf(product as StaticProduct) || 0;
   const more = PRODUCTS.filter((p) => p.slug !== product.slug).slice(0, 3);
 
-  const add = () => {
-    // TODO: connect to your cart (context, Shopify, etc.) using `qty`
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+  // Load live reviews and live product details
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const live = await api.getProductById(product.slug);
+        if (isMounted && live) {
+          setProduct((prev) => ({ ...prev, ...live }));
+          if (live.reviews) {
+            setReviews(live.reviews);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch product details from API:", err);
+      } finally {
+        if (isMounted) setLoadingReviews(false);
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [product.slug]);
+
+  const add = async () => {
+    if (!user) {
+      alert("Please sign in to add spices to your cart.");
+      window.location.href = "/login";
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const prodId = ("id" in product && product.id) ? product.id : product.slug;
+      await api.addToCart(prodId, qty, "100g");
+      await refreshCartCount();
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to add to cart";
+      alert(msg);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      alert("Please sign in to leave a review.");
+      return;
+    }
+    if (!reviewComment.trim()) return;
+
+    setSubmittingReview(true);
+    setReviewMessage("");
+    try {
+      const prodId = ("id" in product && product.id) ? product.id : product.slug;
+      const res = await api.addReview({
+        productId: prodId,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      });
+      if (res.review) {
+        setReviews((prev) => [res.review, ...prev]);
+        setReviewComment("");
+        setReviewMessage("Thank you! Your review has been added.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit review";
+      setReviewMessage(`Error: ${msg}`);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!confirm("Are you sure you want to delete this review?")) return;
+    try {
+      await api.deleteReview(reviewId);
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete review";
+      alert(msg);
+    }
   };
 
   const stepBtn =
     "grid h-11 w-11 place-items-center text-xl text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1F4D1F]";
+
+  const imageSrc = getImageUrl("img" in product ? product.img : (product as ApiProduct).image);
+  const detailsList = "details" in product && Array.isArray(product.details) ? product.details : [];
+
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   return (
     <main className="text-[#141414]" style={{ backgroundColor: TINT }}>
@@ -58,7 +158,14 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </span>
               </span>
             )}
-            <Image src={product.img} alt={product.name} fill priority sizes="(min-width: 768px) 50vw, 100vw" className="object-contain p-10" />
+            <Image
+              src={imageSrc}
+              alt={product.name}
+              fill
+              priority
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-contain p-10"
+            />
           </div>
 
           {/* info */}
@@ -67,12 +174,29 @@ export default function ProductDetails({ product }: { product: Product }) {
               {product.name}
             </h1>
 
+            {avgRating && (
+              <div className="flex items-center gap-2 text-sm text-[#141414]/80">
+                <span className="flex text-amber-500">
+                  {"★".repeat(Math.round(Number(avgRating)))}
+                  {"☆".repeat(5 - Math.round(Number(avgRating)))}
+                </span>
+                <span className="font-semibold">{avgRating}</span>
+                <span className="text-[#141414]/50">({reviews.length} reviews)</span>
+              </div>
+            )}
+
             <p className={`${condensed.className} text-3xl`}>
-              Rs. {product.price.toFixed(2)}
-              {product.mrp && <span className="ml-3 text-xl font-semibold text-[#141414]/60 line-through">Rs. {product.mrp.toFixed(2)}</span>}
+              Rs. {Number(product.price).toFixed(2)}
+              {product.mrp && Number(product.mrp) > Number(product.price) && (
+                <span className="ml-3 text-xl font-semibold text-[#141414]/60 line-through">
+                  Rs. {Number(product.mrp).toFixed(2)}
+                </span>
+              )}
             </p>
 
-            <p className="max-w-lg text-[#141414]/75">{product.desc}</p>
+            <p className="max-w-lg text-[#141414]/75">
+              {"desc" in product ? product.desc : (product as ApiProduct).description}
+            </p>
 
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center overflow-hidden rounded-full border border-[#1F4D1F] bg-white" role="group" aria-label="Quantity">
@@ -83,26 +207,159 @@ export default function ProductDetails({ product }: { product: Product }) {
               <button
                 type="button"
                 onClick={add}
-                className={`${condensed.className} rounded-full px-12 py-3 text-xl font-bold uppercase text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]`}
-                style={{ backgroundColor: GREEN }}
+                disabled={adding}
+                className={`${condensed.className} rounded-full px-12 py-3 text-xl font-bold uppercase text-white transition-opacity hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]`}
+                style={{ backgroundColor: added ? "#14532d" : GREEN }}
                 aria-live="polite"
               >
-                {added ? "Added" : "Add to cart"}
+                {adding ? "Adding..." : added ? "✓ Added to Cart" : "Add to cart"}
               </button>
             </div>
 
-            <dl className="mt-4 grid w-full max-w-lg grid-cols-2 gap-x-6 gap-y-4 border-t border-[#1F4D1F]/15 pt-6">
-              {product.details.map((d) => (
-                <div key={d.label}>
-                  <dt className="text-sm text-[#141414]/55">{d.label}</dt>
-                  <dd className="font-medium">{d.value}</dd>
-                </div>
-              ))}
-            </dl>
+            {detailsList.length > 0 && (
+              <dl className="mt-4 grid w-full max-w-lg grid-cols-2 gap-x-6 gap-y-4 border-t border-[#1F4D1F]/15 pt-6">
+                {detailsList.map((d) => (
+                  <div key={d.label}>
+                    <dt className="text-sm text-[#141414]/55">{d.label}</dt>
+                    <dd className="font-medium">{d.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
 
-            <p className="text-sm text-[#141414]/60">Buying in bulk? <Link href="/contact" className="underline" style={{ color: GREEN }}>Send us a message</Link>.</p>
+            <p className="text-sm text-[#141414]/60">
+              Buying in bulk? <Link href="/contact" className="underline" style={{ color: GREEN }}>Send us a message</Link>.
+            </p>
           </div>
         </div>
+
+        {/* Customer Reviews Section */}
+        <section className="mt-20 rounded-[2rem] border border-[#1F4D1F]/15 bg-white p-6 sm:p-10" aria-labelledby="reviews-heading">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1F4D1F]/15 pb-6">
+            <div>
+              <h2 id="reviews-heading" className={`${serif.className} text-3xl font-semibold sm:text-4xl`} style={{ color: GREEN }}>
+                Customer Reviews
+              </h2>
+              <p className="mt-1 text-sm text-[#141414]/60">
+                {reviews.length > 0 ? `${reviews.length} review(s) for ${product.name}` : "No reviews yet. Be the first to share your experience!"}
+              </p>
+            </div>
+
+            {avgRating && (
+              <div className="flex items-center gap-3 rounded-2xl bg-[#EEF3EA] px-5 py-3">
+                <span className="text-2xl font-bold" style={{ color: GREEN }}>{avgRating}</span>
+                <div className="text-xs text-[#141414]/70">
+                  <div className="flex text-amber-500">
+                    {"★".repeat(Math.round(Number(avgRating)))}
+                    {"☆".repeat(5 - Math.round(Number(avgRating)))}
+                  </div>
+                  <span>Average rating</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Add Review Form */}
+          <div className="mt-8 rounded-2xl bg-[#EEF3EA]/60 p-6 sm:p-8">
+            <h3 className={`${serif.className} text-2xl font-semibold`} style={{ color: GREEN }}>
+              Write a Review
+            </h3>
+
+            {user ? (
+              <form onSubmit={handleAddReview} className="mt-4 flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#141414]/80">Rating</label>
+                  <div className="mt-1 flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className={`text-2xl transition-transform hover:scale-125 ${
+                          star <= reviewRating ? "text-amber-500" : "text-gray-300"
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm font-semibold">{reviewRating} / 5 Stars</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#141414]/80">Your Review</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your thoughts about this spice pod, aroma, flavor or freshness..."
+                    className="mt-1 w-full rounded-xl border border-[#1F4D1F]/25 bg-white p-3 text-sm outline-none focus:border-[#1F4D1F] focus:ring-2 focus:ring-[#1F4D1F]/20"
+                  />
+                </div>
+
+                {reviewMessage && (
+                  <p className="text-sm font-medium text-[#1F4D1F]">{reviewMessage}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="self-start rounded-full px-7 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: GREEN }}
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </form>
+            ) : (
+              <div className="mt-3">
+                <p className="text-sm text-[#141414]/70">
+                  Please{" "}
+                  <Link href="/login" className="font-semibold text-[#1F4D1F] underline">
+                    sign in
+                  </Link>{" "}
+                  to write a review.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Reviews List */}
+          <div className="mt-8 divide-y divide-[#1F4D1F]/10">
+            {reviews.map((rev) => (
+              <div key={rev.id} className="flex flex-col gap-2 py-5 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-[#141414]">{rev.username}</span>
+                    <span className="flex text-amber-500 text-sm">
+                      {"★".repeat(rev.rating)}
+                      {"☆".repeat(5 - rev.rating)}
+                    </span>
+                    <span className="text-xs text-[#141414]/40">
+                      {new Date(rev.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-[#141414]/80">{rev.comment}</p>
+                </div>
+
+                {/* Delete review button (for author or admin) */}
+                {(user?.email === rev.user_email || user?.role === "admin") && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteReview(rev.id)}
+                    className="self-start text-xs font-medium text-[#C8221E] hover:underline"
+                  >
+                    Delete review
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* more products */}
         <section className="mt-24" aria-labelledby="more">
@@ -111,9 +368,19 @@ export default function ProductDetails({ product }: { product: Product }) {
           </h2>
           <div className="grid gap-6 sm:grid-cols-3">
             {more.map((p) => (
-              <Link key={p.slug} href={`/products/${p.slug}`} className="group flex flex-col items-center text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1F4D1F]">
+              <Link
+                key={p.slug}
+                href={`/products/${p.slug}`}
+                className="group flex flex-col items-center text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1F4D1F]"
+              >
                 <div className="relative aspect-square w-full">
-                  <Image src={p.img} alt="" fill sizes="(min-width: 640px) 30vw, 90vw" className="object-contain p-6 transition-transform duration-500 group-hover:scale-105" />
+                  <Image
+                    src={p.img}
+                    alt=""
+                    fill
+                    sizes="(min-width: 640px) 30vw, 90vw"
+                    className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                  />
                 </div>
                 <span className={`${condensed.className} mt-2 text-xl font-semibold uppercase`}>{p.name}</span>
                 <span className={`${condensed.className} text-lg`}>Rs. {p.price.toFixed(2)}</span>

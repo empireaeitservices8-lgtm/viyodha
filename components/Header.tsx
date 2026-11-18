@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * Header for Viyodha
@@ -78,12 +79,16 @@ function CartIcon() {
 
 export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
   const router = useRouter();
+  const { user, cartCount: authCartCount, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const displayCartCount = authCartCount !== undefined ? authCartCount : cartCount;
 
   const matches = query.trim()
     ? PRODUCTS.filter((p) => p.label.toLowerCase().includes(query.trim().toLowerCase()))
@@ -231,8 +236,8 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
             />
           </Link>
 
-          {/* Right: search, login, register, cart */}
-          <div className="flex items-center justify-end gap-2 sm:gap-5">
+          {/* Right: search, user menu or login/register, cart */}
+          <div className="flex items-center justify-end gap-2 sm:gap-4">
             <button
               type="button"
               className={`${linkClass} flex items-center gap-2 p-2`}
@@ -244,16 +249,86 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
               <span className="hidden lg:inline">Search</span>
             </button>
 
-            <Link href="/login" className={`${linkClass} hidden md:inline`}>
-              Login
-            </Link>
+            {user ? (
+              <div className="relative hidden md:block">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((o) => !o)}
+                  className="flex items-center gap-2 rounded-full border border-[#1F4D1F]/30 bg-[#EEF3EA] px-3.5 py-1.5 text-sm font-medium text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white"
+                >
+                  <span className="max-w-[120px] truncate">{user.username}</span>
+                  {user.role === "admin" && (
+                    <span className="rounded bg-[#1F4D1F] px-1.5 py-0.5 text-[10px] font-bold uppercase text-white group-hover:bg-white group-hover:text-[#1F4D1F]">
+                      Admin
+                    </span>
+                  )}
+                  <ChevronIcon open={userMenuOpen} />
+                </button>
 
-            <Link
-              href="/register"
-              className="hidden rounded-full border border-[#1F4D1F] px-4 py-1.5 text-sm font-medium text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F] md:inline-block"
-            >
-              Register
-            </Link>
+                {userMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-[#1F4D1F]/20 bg-white py-1.5 shadow-xl"
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                  >
+                    <div className="border-b border-[#1F4D1F]/10 px-4 py-2">
+                      <p className="text-xs text-[#141414]/60">Signed in as</p>
+                      <p className="truncate text-sm font-semibold text-[#1F4D1F]">{user.email}</p>
+                    </div>
+
+                    {user.role === "admin" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm font-semibold text-[#C8221E] hover:bg-[#EEF3EA]"
+                      >
+                        ⚡ Admin Dashboard
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-[#141414] hover:bg-[#EEF3EA] hover:text-[#1F4D1F]"
+                    >
+                      My Profile
+                    </Link>
+
+                    <Link
+                      href="/orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-[#141414] hover:bg-[#EEF3EA] hover:text-[#1F4D1F]"
+                    >
+                      My Orders & Status
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                        router.push("/");
+                      }}
+                      className="block w-full border-t border-[#1F4D1F]/10 px-4 py-2 text-left text-sm text-[#C8221E] hover:bg-red-50"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className={`${linkClass} hidden md:inline`}>
+                  Login
+                </Link>
+
+                <Link
+                  href="/register"
+                  className="hidden rounded-full border border-[#1F4D1F] px-4 py-1.5 text-sm font-medium text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F] md:inline-block"
+                >
+                  Register
+                </Link>
+              </>
+            )}
 
             <Link
               href="/cart"
@@ -261,7 +336,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
               style={{ backgroundColor: COLORS.green }}
             >
               <CartIcon />
-              <span>Cart ({cartCount})</span>
+              <span>Cart ({displayCartCount})</span>
             </Link>
           </div>
         </div>
@@ -413,16 +488,57 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                 Contact
               </Link>
             </li>
-            <li>
-              <Link href="/login" className={linkClass} onClick={() => setMenuOpen(false)}>
-                Login
-              </Link>
-            </li>
-            <li>
-              <Link href="/register" className={linkClass} onClick={() => setMenuOpen(false)}>
-                Register
-              </Link>
-            </li>
+            {user ? (
+              <>
+                {user.role === "admin" && (
+                  <li>
+                    <Link
+                      href="/admin"
+                      className="text-sm font-semibold text-[#C8221E]"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  </li>
+                )}
+                <li>
+                  <Link href="/profile" className={linkClass} onClick={() => setMenuOpen(false)}>
+                    Profile ({user.username})
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/orders" className={linkClass} onClick={() => setMenuOpen(false)}>
+                    My Orders
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logout();
+                      router.push("/");
+                    }}
+                    className="text-sm font-medium text-[#C8221E]"
+                  >
+                    Sign Out
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <Link href="/login" className={linkClass} onClick={() => setMenuOpen(false)}>
+                    Login
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/register" className={linkClass} onClick={() => setMenuOpen(false)}>
+                    Register
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
       )}

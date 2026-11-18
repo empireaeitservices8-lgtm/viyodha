@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Cormorant_Garamond } from "next/font/google";
+import { api } from "@/lib/api";
 
 /**
  * app/contact/page.tsx  (Viyodha contact page)
@@ -127,20 +128,30 @@ function ContactForm() {
   const [topic, setTopic] = useState(TOPICS[0]);
   const [sent, setSent] = useState(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const subject = `${topic} from ${f.get("name")}`;
-    const body = [
-      `Name: ${f.get("name")}`,
-      `Phone: ${f.get("phone")}`,
-      `Email: ${f.get("email")}`,
-      `Topic: ${topic}`,
-      "",
-      `${f.get("message")}`,
-    ].join("\n");
-    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+    const name = String(f.get("name"));
+    const phone = String(f.get("phone"));
+    const email = String(f.get("email"));
+    const message = String(f.get("message"));
+
+    try {
+      await api.sendContact({ name, phone, email, message });
+      setSent(true);
+    } catch {
+      const subject = `${topic} from ${name}`;
+      const body = [
+        `Name: ${name}`,
+        `Phone: ${phone}`,
+        `Email: ${email}`,
+        `Topic: ${topic}`,
+        "",
+        `${message}`,
+      ].join("\n");
+      window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      setSent(true);
+    }
   };
 
   const field =

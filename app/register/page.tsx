@@ -2,35 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthShell, { Field, PasswordField, fieldClass, primaryBtn, focusRing, GREEN } from "@/components/AuthShell";
-
-/**
- * app/register/page.tsx
- * Connect `onSubmit` to your sign-up API.
- */
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { register } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    const f = new FormData(e.currentTarget);
 
-    if (f.get("password") !== f.get("confirm")) {
-      setError("The two passwords do not match. Type the same password in both fields.");
+    const f = new FormData(e.currentTarget);
+    const username = String(f.get("name")).trim();
+    const phone = String(f.get("phone")).trim();
+    const email = String(f.get("email")).trim();
+    const password = String(f.get("password"));
+    const confirm = String(f.get("confirm"));
+
+    if (password !== confirm) {
+      setError("The two passwords do not match. Please verify and try again.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: call your sign-up API here, e.g.
-      // const res = await fetch("/api/register", { method: "POST", body: JSON.stringify(Object.fromEntries(f)) });
-      // if (!res.ok) throw new Error();
-      // router.push("/login");
-    } catch {
-      setError("We could not create your account. Please try again.");
+      await register({ username, phone, email, password });
+      router.push("/products");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "We could not create your account. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -62,20 +71,22 @@ export default function RegisterPage() {
         </div>
 
         <Field label="Email">
-          <input name="email" type="email" required autoComplete="email" placeholder="you@company.com" className={fieldClass} />
+          <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" className={fieldClass} />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <PasswordField label="Password" name="password" autoComplete="new-password" hint="At least 8 characters." />
+          <PasswordField label="Password" name="password" autoComplete="new-password" hint="At least 6 characters." />
           <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" placeholder="Repeat password" />
         </div>
 
-        <p role="alert" aria-live="assertive" className={error ? "rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" : "sr-only"}>
-          {error}
-        </p>
+        {error && (
+          <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
 
         <button type="submit" disabled={loading} className={primaryBtn} style={{ backgroundColor: GREEN }}>
-          {loading ? "Creating account" : "Create account"}
+          {loading ? "Creating account..." : "Create account"}
         </button>
       </form>
     </AuthShell>

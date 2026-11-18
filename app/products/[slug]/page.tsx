@@ -2,13 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PRODUCTS } from "@/lib/products";
+import { api } from "@/lib/api";
 import ProductDetails from "./ProductDetails";
-
-/**
- * app/products/[slug]/page.tsx  (server component)
- * The page shell renders instantly. The product itself is looked up inside
- * <Suspense>, because the slug (params) is only known per request.
- */
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: p.slug }));
@@ -16,13 +11,35 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const product = PRODUCTS.find((p) => p.slug === slug);
+  let product = PRODUCTS.find((p) => p.slug === slug);
+  if (!product) {
+    try {
+      const live = await api.getProductById(slug);
+      if (live) {
+        return { title: `${live.name} | Viyodha`, description: live.description };
+      }
+    } catch {
+      // ignore
+    }
+  }
   return product ? { title: `${product.name} | Viyodha`, description: product.desc } : {};
 }
 
 async function ProductContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = PRODUCTS.find((p) => p.slug === slug);
+  let product = PRODUCTS.find((p) => p.slug === slug);
+
+  if (!product) {
+    try {
+      const live = await api.getProductById(slug);
+      if (live) {
+        return <ProductDetails product={live} />;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if (!product) notFound();
 
   return <ProductDetails product={product} />;
