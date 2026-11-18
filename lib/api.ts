@@ -1,10 +1,10 @@
 function resolveApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (!envUrl) return "http://localhost:5000";
+  if (!envUrl) return "https://viyodha-backend.onrender.com";
 
   if (envUrl.includes("||")) {
     const parts = envUrl.split("||").map((s) => s.trim()).filter(Boolean);
-    return (parts[0] || "http://localhost:5000").replace(/\/$/, "");
+    return (parts[0] || "https://viyodha-backend.onrender.com").replace(/\/$/, "");
   }
 
   return envUrl.replace(/\/$/, "");
