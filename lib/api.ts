@@ -56,6 +56,8 @@ export type Product = {
   type: string;
   description: string;
   image: string;
+  image2?: string;
+  images?: string[];
   stock?: number;
   details?: ProductDetail[];
   created_at?: string;
@@ -64,6 +66,39 @@ export type Product = {
   avgRating?: number;
   reviewCount?: number;
 };
+
+const DEFAULT_IMAGE2_MAP: Record<string, string> = {
+  "green-cardamom": "/hero/hero1.jpg",
+  "black-pepper": "/dried1.jpg",
+  "nutmeg": "/wood1.jpg",
+  "bay-leaf": "/hero/hero3.jpg",
+  "bay-leaf-200g": "/hero/hero3.jpg",
+  "cinnamon": "/products/cassia.png",
+  "star-anise": "/wooden2.jpg",
+  "mace": "/hero/hero2.jpg",
+  "cloves": "/hand_sorting.jpg",
+};
+
+export function getProductImagePair(p: {
+  image?: string;
+  img?: string;
+  image2?: string;
+  img2?: string;
+  images?: string[];
+  slug?: string;
+}): [string, string] {
+  const primary = p.image || p.img || "/products/cardamom.png";
+  if (p.image2 || p.img2) {
+    return [primary, p.image2 || p.img2!];
+  }
+  if (p.images && p.images.length > 1) {
+    return [p.images[0], p.images[1]];
+  }
+  if (p.slug && DEFAULT_IMAGE2_MAP[p.slug]) {
+    return [primary, DEFAULT_IMAGE2_MAP[p.slug]];
+  }
+  return [primary, "/wood1.jpg"];
+}
 
 export type Review = {
   id: number;

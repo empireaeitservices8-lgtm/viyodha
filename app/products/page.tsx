@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
-import { api, getImageUrl, Product } from "@/lib/api";
+import { api, getImageUrl, getProductImagePair, Product } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -21,14 +21,28 @@ function calculateDiscount(price: number, mrp?: number) {
   return Math.round((1 - price / mrp) * 100);
 }
 
-function ProductCard({ p }: { p: Product }) {
+function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }) {
   const { user, refreshCartCount } = useAuth();
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   const priceNum = Number(p.price);
   const mrpNum = p.mrp ? Number(p.mrp) : undefined;
   const off = calculateDiscount(priceNum, mrpNum);
+
+  const [img1Raw, img2Raw] = getProductImagePair(p);
+  const images = [getImageUrl(img1Raw), getImageUrl(img2Raw)];
+
+  // Automatically slide to 2nd image every 3.5 seconds
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev === 0 ? 1 : 0));
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
 
   const add = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,8 +69,6 @@ function ProductCard({ p }: { p: Product }) {
     }
   };
 
-  const imageSrc = getImageUrl(p.image);
-
   return (
     <article className="group relative flex flex-col items-center text-center">
       {off > 0 && (
@@ -72,14 +84,70 @@ function ProductCard({ p }: { p: Product }) {
         </span>
       )}
 
-      <div className="relative aspect-square w-full">
-        <Image
-          src={imageSrc}
-          alt={p.name}
-          fill
-          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
-          className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
-        />
+      {/* Dual Image Auto-sliding Carousel without outer white background */}
+      <div
+        className="relative aspect-square w-full overflow-hidden"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Photo count indicator */}
+        <span className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-0.5 text-[11px] font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <circle cx="9" cy="9" r="2" />
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+          </svg>
+          <span>{activeIdx + 1}/2</span>
+        </span>
+
+        {/* Sliding carousel track */}
+        <div
+          className="flex h-full w-full transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${activeIdx * 100}%)` }}
+        >
+          <div className="relative h-full w-full shrink-0">
+            <Image
+              src={images[0]}
+              alt={p.name}
+              fill
+              priority={priority}
+              loading={priority ? "eager" : undefined}
+              sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+              className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+          <div className="relative h-full w-full shrink-0">
+            <Image
+              src={images[1]}
+              alt={`${p.name} - view 2`}
+              fill
+              priority={priority}
+              sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+              className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+        </div>
+
+        {/* Dual Image Interactive Switcher Dots */}
+        <div className="absolute bottom-2 inset-x-0 z-20 flex justify-center items-center gap-2">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`View image ${idx + 1} of ${p.name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setActiveIdx(idx);
+              }}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                activeIdx === idx
+                  ? "w-6 bg-[#1F4D1F]"
+                  : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 flex w-full flex-1 flex-col items-center gap-3">
@@ -215,8 +283,8 @@ function ProductsContent() {
           </div>
         ) : (
           <div className="grid gap-x-8 gap-y-20 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((p) => (
-              <ProductCard key={p.slug || p.id} p={p} />
+            {filtered.map((p, idx) => (
+              <ProductCard key={p.slug || p.id} p={p} priority={idx < 6} />
             ))}
           </div>
         )}

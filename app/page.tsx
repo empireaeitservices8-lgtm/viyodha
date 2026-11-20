@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Cormorant_Garamond } from "next/font/google";
+import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
+import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * app/page.tsx  (Viyodha home page)
@@ -16,9 +18,11 @@ import { Cormorant_Garamond } from "next/font/google";
  */
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
+const condensed = Barlow_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
 const GREEN = "#1F4D1F";
 const TINT = "#EEF3EA";
+const RED = "#C8221E";
 
 /* ---------------------------------- data ---------------------------------- */
 
@@ -51,10 +55,50 @@ const VIDEOS = [
 ];
 
 const PRODUCTS = [
-  { name: "Green Cardamom", desc: "Plump, aromatic pods graded by size.", img: "/products/cardamom.png", grade: "8mm+", origin: "Idukki" },
-  { name: "Cinnamon", desc: "Thin, fragrant quills with a sweet finish.", img: "/products/cinnamon.png", grade: "Ceylon type", origin: "Kerala" },
-  { name: "Nutmeg", desc: "Whole nutmeg.", img: "/products/nutmeg.png", grade: "Whole", origin: "Kerala" },
-  { name: "Bay Leaf", desc: "Whole leaves, dried slowly to keep their oils.", img: "/products/bay_leaf.png", grade: "Hand-picked", origin: "Kerala" },
+  {
+    name: "Cardamom",
+    slug: "green-cardamom",
+    desc: "Plump, aromatic 8mm+ pods, sun-dried and graded by hand for maximum essential oil retention.",
+    price: 495,
+    mrp: 599,
+    img: "/products/cardamom.png",
+    img2: "/products/cardamom2.png",
+    grade: "8mm+ Bold",
+    origin: "Idukki, Kerala",
+  },
+  {
+    name: "Black Pepper",
+    slug: "black-pepper",
+    desc: "Malabar Garbled extra-bold peppercorns, slow-dried to lock in sharp piperine heat and woody aroma.",
+    price: 349,
+    mrp: 429,
+    img: "/products/black_pepper.png",
+    img2: "/products/black_pepper2.png",
+    grade: "Malabar Garbled",
+    origin: "Wayanad, Kerala",
+  },
+  {
+    name: "Cinnamon",
+    slug: "cinnamon",
+    desc: "Delicate Ceylon-style thin quills with a naturally sweet aroma and warm, fragrant finish.",
+    price: 299,
+    mrp: 369,
+    img: "/products/cinnamon.png",
+    img2: "/products/cinnamon2.png",
+    grade: "Ceylon type",
+    origin: "Kerala Hills",
+  },
+  {
+    name: "Nutmeg",
+    slug: "nutmeg",
+    desc: "Whole sound nutmeg kernels harvested from ripe yellow pericarp, packed with intense warm aroma.",
+    price: 599,
+    mrp: 749,
+    img: "/products/nutmeg.png",
+    img2: "/products/nutmeg2.png",
+    grade: "Whole Sound",
+    origin: "Kerala",
+  },
 ];
 
 const COMMITMENTS = [
@@ -86,84 +130,77 @@ const roundBtn =
 
 function HeroCarousel() {
   const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
   const go = (n: number) => setI((n + SLIDES.length) % SLIDES.length);
 
-  const firstChange = useRef(true);
-
   useEffect(() => {
-    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const delay = firstChange.current ? 2500 : 5500; // first change is quicker
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const t = setTimeout(() => {
-      firstChange.current = false;
       setI((n) => (n + 1) % SLIDES.length);
-    }, delay);
-    return () => clearTimeout(t);
-  }, [i, paused]);
+  }, 4000);
+  return () => clearTimeout(t);
+  }, [i]);
 
-  return (
-    <section
-      className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
-      aria-roledescription="carousel"
-      aria-label="Featured spices"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="relative overflow-hidden rounded-[2rem]" style={{ backgroundColor: TINT }}>
-        <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${i * 100}%)` }}>
-          {SLIDES.map((s, n) => (
-            <div key={s.img} className="grid w-full shrink-0 md:h-[540px] md:grid-cols-2" aria-hidden={n !== i}>
-              <div className="order-2 flex flex-col justify-center gap-5 p-8 pb-16 sm:p-12 md:order-1 md:pb-12">
-                <h1 className={`${serif.className} text-4xl font-semibold leading-[1.05] sm:text-5xl lg:text-6xl`} style={{ color: GREEN }}>
-                  {s.title}
-                </h1>
-                <p className="max-w-md text-lg text-[#141414]/75">{s.text}</p>
-                <div>
-                  <Link
-                    href="/products"
-                    tabIndex={n === i ? 0 : -1}
-                    className="inline-block rounded-full px-7 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]"
-                    style={{ backgroundColor: GREEN }}
-                  >
-                    Shop spices
-                  </Link>
-                </div>
-              </div>
-              <div className="order-1 m-4 flex items-center justify-center overflow-hidden rounded-3xl bg-white md:order-2">
-                <Image
-                  src={s.img}
-                  alt=""
-                  width={0}
-                  height={0}
-                  priority={n === 0}
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  className="h-auto w-full object-contain md:max-h-[508px]"
-                />
+return (
+  <section
+    className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
+    aria-roledescription="carousel"
+    aria-label="Featured spices"
+  >
+    <div className="relative overflow-hidden rounded-[2rem]" style={{ backgroundColor: TINT }}>
+      <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${i * 100}%)` }}>
+        {SLIDES.map((s, n) => (
+          <div key={s.img} className="grid w-full shrink-0 md:h-[540px] md:grid-cols-2" aria-hidden={n !== i}>
+            <div className="order-2 flex flex-col justify-center gap-5 p-8 pb-16 sm:p-12 md:order-1 md:pb-12">
+              <h1 className={`${serif.className} text-4xl font-semibold leading-[1.05] sm:text-5xl lg:text-6xl`} style={{ color: GREEN }}>
+                {s.title}
+              </h1>
+              <p className="max-w-md text-lg text-[#141414]/75">{s.text}</p>
+              <div>
+                <Link
+                  href="/products"
+                  tabIndex={n === i ? 0 : -1}
+                  className="inline-block rounded-full px-7 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]"
+                  style={{ backgroundColor: GREEN }}
+                >
+                  Shop spices
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* controls */}
-        <div className="absolute bottom-5 left-8 flex items-center gap-2 sm:left-12">
-          {SLIDES.map((_, n) => (
-            <button
-              key={n}
-              type="button"
-              aria-label={`Go to slide ${n + 1}`}
-              aria-current={n === i}
-              onClick={() => go(n)}
-              className={`h-2.5 rounded-full transition-all ${n === i ? "w-8 bg-[#1F4D1F]" : "w-2.5 bg-[#1F4D1F]/30"}`}
-            />
-          ))}
-        </div>
-        <div className="absolute bottom-4 right-6 hidden gap-2 md:flex">
-          <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)} className={roundBtn}><Arrow dir="l" /></button>
-          <button type="button" aria-label="Next slide" onClick={() => go(i + 1)} className={roundBtn}><Arrow dir="r" /></button>
-        </div>
+            <div className="order-1 m-4 flex items-center justify-center overflow-hidden rounded-3xl bg-white md:order-2">
+              <Image
+                src={s.img}
+                alt=""
+                width={0}
+                height={0}
+                priority={n === 0}
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="h-auto w-full object-contain md:max-h-[508px]"
+              />
+            </div>
+          </div>
+        ))}
       </div>
-    </section>
-  );
+
+      {/* controls */}
+      <div className="absolute bottom-5 left-8 flex items-center gap-2 sm:left-12">
+        {SLIDES.map((_, n) => (
+          <button
+            key={n}
+            type="button"
+            aria-label={`Go to slide ${n + 1}`}
+            aria-current={n === i}
+            onClick={() => go(n)}
+            className={`h-2.5 rounded-full transition-all ${n === i ? "w-8 bg-[#1F4D1F]" : "w-2.5 bg-[#1F4D1F]/30"}`}
+          />
+        ))}
+      </div>
+      <div className="absolute bottom-4 right-6 hidden gap-2 md:flex">
+        <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)} className={roundBtn}><Arrow dir="l" /></button>
+        <button type="button" aria-label="Next slide" onClick={() => go(i + 1)} className={roundBtn}><Arrow dir="r" /></button>
+      </div>
+    </div>
+  </section>
+);
 }
 
 /* ------------------------------ 2. video row ------------------------------- */
@@ -175,7 +212,7 @@ function VideoCard({ v }: { v: (typeof VIDEOS)[number] }) {
   const toggle = () => {
     const el = ref.current;
     if (!el) return;
-    if (el.paused) el.play().catch(() => {});
+    if (el.paused) el.play().catch(() => { });
     else el.pause();
   };
 
@@ -184,7 +221,7 @@ function VideoCard({ v }: { v: (typeof VIDEOS)[number] }) {
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => (entry.isIntersecting ? el.play().catch(() => {}) : el.pause()),
+      ([entry]) => (entry.isIntersecting ? el.play().catch(() => { }) : el.pause()),
       { threshold: 0.4 }
     );
     io.observe(el);
@@ -242,6 +279,175 @@ function VideoRow() {
 
 /* --------------------- 3. export-style sections (image 5) ------------------ */
 
+function HomeProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
+  const { user, refreshCartCount } = useAuth();
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [added, setAdded] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  const images = [p.img, p.img2];
+  const off = Math.round((1 - p.price / p.mrp) * 100);
+
+  // Automatically slide to 2nd image every 3.5 seconds (also when hovered)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev === 0 ? 1 : 0));
+    }, 3500);
+    return () => clearInterval(timer);
+}, []);
+
+const add = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+  e.preventDefault();
+  if (adding) return;
+
+  if (!user) {
+    alert("Please sign in to add spices to your cart.");
+    window.location.href = "/login";
+    return;
+  }
+
+  setAdding(true);
+  try {
+    await api.addToCart(p.slug, 1, "100g");
+    await refreshCartCount();
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to add to cart";
+    alert(msg);
+  } finally {
+    setAdding(false);
+  }
+};
+
+return (
+  <article
+    className="group relative flex flex-col overflow-hidden rounded-3xl border border-[#1F4D1F]/15 bg-white shadow-sm transition-all hover:shadow-lg"
+  >
+    {/* Discount badge */}
+    {off > 0 && (
+      <span
+        className={`${condensed.className} pointer-events-none absolute left-3 top-3 z-20 grid h-12 w-12 place-items-center rounded-full text-center text-xs font-bold leading-tight text-white shadow-md`}
+        style={{ backgroundColor: RED }}
+      >
+        <span>
+          {off}%<br />OFF
+        </span>
+      </span>
+    )}
+
+    {/* 2 Photos Badge */}
+    <span className="pointer-events-none absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+        <circle cx="9" cy="9" r="2" />
+        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+      </svg>
+      <span>{activeIdx + 1}/2</span>
+    </span>
+
+    {/* Dual Image Auto-sliding Carousel without outer white background */}
+    <div className="relative aspect-square w-full overflow-hidden bg-[#EEF3EA]">
+      {/* Sliding track */}
+      <div
+        className="flex h-full w-full transition-transform duration-700 ease-in-out"
+        style={{ transform: `translateX(-${activeIdx * 100}%)` }}
+      >
+        <div className="relative h-full w-full shrink-0">
+          <Image
+            src={images[0]}
+            alt={p.name}
+            fill
+            sizes="(min-width: 1024px) 25vw, 50vw"
+            className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+        <div className="relative h-full w-full shrink-0">
+          <Image
+            src={images[1]}
+            alt={`${p.name} secondary view`}
+            fill
+            sizes="(min-width: 1024px) 25vw, 50vw"
+            className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+      </div>
+
+      {/* Interactive Dots Switcher */}
+      <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center items-center gap-1.5">
+        {images.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            aria-label={`View photo ${idx + 1} of ${p.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setActiveIdx(idx);
+            }}
+            className={`h-2 rounded-full transition-all duration-300 ${activeIdx === idx
+              ? "w-6 bg-[#1F4D1F]"
+              : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
+              }`}
+          />
+        ))}
+      </div>
+    </div>
+
+    {/* Info Body */}
+    <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className={`${serif.className} text-2xl font-bold text-[#141414]`}>
+          <Link href={`/products/${p.slug}`} className="hover:text-[#1F4D1F] transition-colors">
+            {p.name}
+          </Link>
+        </h3>
+        <p className={`${condensed.className} text-xl font-bold text-[#1F4D1F]`}>
+          ₹{p.price}
+          {p.mrp > p.price && (
+            <span className="ml-2 text-sm font-semibold text-[#141414]/50 line-through">
+              ₹{p.mrp}
+            </span>
+          )}
+        </p>
+      </div>
+
+      <p className="line-clamp-2 text-sm text-[#141414]/70">{p.desc}</p>
+
+      <dl className="mt-auto grid grid-cols-2 gap-2 border-t border-[#1F4D1F]/10 pt-3 text-xs">
+        <div>
+          <dt className="text-[#141414]/50">Grade</dt>
+          <dd className="font-semibold text-[#1F4D1F]">{p.grade}</dd>
+        </div>
+        <div>
+          <dt className="text-[#141414]/50">Origin</dt>
+          <dd className="font-semibold text-[#1F4D1F]">{p.origin}</dd>
+        </div>
+      </dl>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Link
+          href={`/products/${p.slug}`}
+          className="rounded-full border border-[#1F4D1F] py-2 text-center text-sm font-semibold text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white"
+        >
+          Details
+        </Link>
+        <button
+          type="button"
+          onClick={add}
+          disabled={adding}
+          className="rounded-full py-2 text-center text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+          style={{ backgroundColor: added ? "#14532d" : GREEN }}
+        >
+          {adding ? "Adding..." : added ? "✓ Added" : "Add to cart"}
+        </button>
+      </div>
+    </div>
+  </article>
+);
+}
+
 function ProductCards() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
@@ -253,25 +459,7 @@ function ProductCards() {
       </div>
       <div className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {PRODUCTS.map((p) => (
-          <article key={p.name} className="flex flex-col overflow-hidden rounded-2xl border border-[#1F4D1F]/15 bg-white">
-            <div className="bg-[#EEF3EA]">
-              <Image src={p.img} alt={p.name} width={0} height={0} sizes="(min-width: 1024px) 25vw, 50vw" className="h-auto w-full" />
-            </div>
-            <div className="flex flex-1 flex-col gap-3 p-4">
-              <h3 className="text-lg font-semibold">{p.name}</h3>
-              <p className="text-sm text-[#141414]/70">{p.desc}</p>
-              <dl className="mt-auto grid grid-cols-2 gap-2 border-t border-[#1F4D1F]/10 pt-3 text-xs">
-                <div><dt className="text-[#141414]/50">Grade</dt><dd className="font-medium">{p.grade}</dd></div>
-                <div><dt className="text-[#141414]/50">Origin</dt><dd className="font-medium">{p.origin}</dd></div>
-              </dl>
-              <Link
-                href="/products"
-                className="rounded-full border border-[#1F4D1F] py-2 text-center text-sm font-medium text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]"
-              >
-                View details
-              </Link>
-            </div>
-          </article>
+          <HomeProductCard key={p.slug} p={p} />
         ))}
       </div>
     </section>

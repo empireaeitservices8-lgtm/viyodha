@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS, discountOf, type Product as StaticProduct } from "@/lib/products";
-import { api, getImageUrl, Review, Product as ApiProduct } from "@/lib/api";
+import { api, getImageUrl, getProductImagePair, Review, Product as ApiProduct } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -25,6 +25,20 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [selectedImgIdx, setSelectedImgIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const [rawImg1, rawImg2] = getProductImagePair(product);
+  const images = [getImageUrl(rawImg1), getImageUrl(rawImg2)];
+
+  // Automatically slide to 2nd image every 3.5 seconds
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setSelectedImgIdx((prev) => (prev === 0 ? 1 : 0));
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -144,28 +158,116 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
         </nav>
 
         <div className="grid gap-10 md:grid-cols-2 md:gap-16">
-          {/* image */}
-          <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-white">
-            {off > 0 && (
-              <span
-                className={`${condensed.className} absolute left-4 top-4 z-10 grid h-16 w-16 place-items-center rounded-full text-center text-lg font-bold leading-[1.05] text-white`}
-                style={{ backgroundColor: RED }}
-              >
-                <span>
-                  {off}%
-                  <br />
-                  OFF
+          {/* dual image gallery without outer white background */}
+          <div className="flex flex-col gap-4">
+            <div
+              className="relative aspect-square overflow-hidden rounded-[2rem]"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+            >
+              {off > 0 && (
+                <span
+                  className={`${condensed.className} absolute left-4 top-4 z-10 grid h-16 w-16 place-items-center rounded-full text-center text-lg font-bold leading-[1.05] text-white`}
+                  style={{ backgroundColor: RED }}
+                >
+                  <span>
+                    {off}%
+                    <br />
+                    OFF
+                  </span>
                 </span>
+              )}
+
+              {/* Photo pill badge */}
+              <span className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                <span>Photo {selectedImgIdx + 1} of 2</span>
               </span>
-            )}
-            <Image
-              src={imageSrc}
-              alt={product.name}
-              fill
-              priority
-              sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-contain p-10"
-            />
+
+              {/* Sliding track */}
+              <div
+                className="flex h-full w-full transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${selectedImgIdx * 100}%)` }}
+              >
+                <div className="relative h-full w-full shrink-0">
+                  <Image
+                    src={images[0]}
+                    alt={product.name}
+                    fill
+                    priority
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-contain p-6 sm:p-10"
+                  />
+                </div>
+                <div className="relative h-full w-full shrink-0">
+                  <Image
+                    src={images[1]}
+                    alt={`${product.name} alternate view`}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-contain p-6 sm:p-10"
+                  />
+                </div>
+              </div>
+
+              {/* Prev / Next buttons */}
+              <div className="absolute inset-y-0 inset-x-3 flex items-center justify-between pointer-events-none">
+                <button
+                  type="button"
+                  aria-label="Previous photo"
+                  onClick={() => setSelectedImgIdx((i) => (i === 0 ? 1 : 0))}
+                  className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next photo"
+                  onClick={() => setSelectedImgIdx((i) => (i === 0 ? 1 : 0))}
+                  className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Thumbnail Selector Strip without outer white background */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setSelectedImgIdx(idx)}
+                  className={`group relative flex items-center gap-3 rounded-2xl border-2 p-2.5 transition-all text-left ${
+                    selectedImgIdx === idx
+                      ? "border-[#1F4D1F] bg-[#1F4D1F]/5 shadow-sm ring-2 ring-[#1F4D1F]/20"
+                      : "border-[#1F4D1F]/15 bg-transparent hover:border-[#1F4D1F]/40 hover:bg-[#1F4D1F]/5"
+                  }`}
+                >
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-transparent">
+                    <Image
+                      src={img}
+                      alt={`${product.name} thumbnail ${idx + 1}`}
+                      fill
+                      sizes="56px"
+                      className="object-contain p-1"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#1F4D1F]">
+                      {idx === 0 ? "Product View" : "Spice & Farm View"}
+                    </p>
+                    <p className="text-sm font-medium text-[#141414]">
+                      Image {idx + 1} of 2
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* info */}
