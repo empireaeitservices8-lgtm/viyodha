@@ -222,11 +222,14 @@ function ProductsContent() {
           // Merge fetched products with local products.ts definitions to preserve img2 and custom images
           const merged = fetched.map((f) => {
             const staticProd = STATIC_PRODUCTS.find((sp) => sp.slug === f.slug);
+            const resolvedImg = f.image?.startsWith("/uploads/") || f.image?.startsWith("http")
+              ? f.image
+              : (staticProd?.img || f.image || "/products/cardamom.png");
             return {
               ...f,
               name: f.name || staticProd?.name || "",
               description: f.description || staticProd?.desc || "",
-              image: f.image || staticProd?.img || "/products/cardamom.png",
+              image: resolvedImg,
               image2: f.image2 || staticProd?.img2,
               images: (f.images && f.images.length > 1)
                 ? f.images

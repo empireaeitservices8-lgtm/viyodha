@@ -59,9 +59,14 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
         const live = await api.getProductById(product.slug);
         if (isMounted && live) {
           const staticProd = PRODUCTS.find((sp) => sp.slug === product.slug);
+          const liveImg = live.image?.startsWith("/uploads/") || live.image?.startsWith("http")
+            ? live.image
+            : (staticProd?.img || live.image);
           setProduct((prev) => ({
             ...prev,
             ...live,
+            image: liveImg,
+            img: liveImg,
             image2: live.image2 || ("image2" in prev ? prev.image2 : undefined) || staticProd?.img2,
             img2: live.image2 || ("img2" in prev ? (prev as any).img2 : undefined) || staticProd?.img2,
             images: (live.images && live.images.length > 1) ? live.images : (prev.images || staticProd?.images),
