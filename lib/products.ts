@@ -116,9 +116,9 @@ export const PRODUCTS: Product[] = [
   {
     slug: "star-anise",
     name: "Star Anise 200g",
-    img: "/products/star_anise.png",
+    img: "/products/star_anise.jpeg",
     img2: "/products/star_anise2.png",
-    images: ["/products/star_anise.png", "/products/star_anise2.png"],
+    images: ["/products/star_anise.jpeg", "/products/star_anise2.png"],
     price: 299,
     mrp: 349,
     desc: "Whole, star-shaped pods with a sweet, licorice-like aroma. Add to biryani, masala chai, stocks and slow-cooked curries.",
