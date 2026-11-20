@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Product, Order, User } from "@/lib/api";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -66,9 +67,46 @@ export default function AdminPage() {
     setLoadingProducts(true);
     try {
       const data = await api.getAllProducts();
-      setProducts(data || []);
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
+        setProducts(
+          STATIC_PRODUCTS.map((p, idx) => ({
+            id: idx + 1,
+            name: p.name,
+            slug: p.slug,
+            price: p.price,
+            mrp: p.mrp,
+            category: "Whole Spices",
+            brand: "Viyodha",
+            type: "Spices",
+            description: p.desc,
+            image: p.img,
+            image2: p.img2,
+            images: p.images,
+            details: p.details,
+          }))
+        );
+      }
     } catch (err) {
       console.error("Failed to load products:", err);
+      setProducts(
+        STATIC_PRODUCTS.map((p, idx) => ({
+          id: idx + 1,
+          name: p.name,
+          slug: p.slug,
+          price: p.price,
+          mrp: p.mrp,
+          category: "Whole Spices",
+          brand: "Viyodha",
+          type: "Spices",
+          description: p.desc,
+          image: p.img,
+          image2: p.img2,
+          images: p.images,
+          details: p.details,
+        }))
+      );
     } finally {
       setLoadingProducts(false);
     }
@@ -76,10 +114,11 @@ export default function AdminPage() {
 
   // Fetch Orders
   const loadOrders = useCallback(async () => {
-    if (!token) return;
+    const currentToken = token || (typeof window !== "undefined" ? localStorage.getItem("viyodha_token") : null);
+    if (!currentToken) return;
     setLoadingOrders(true);
     try {
-      const data = await api.getAllOrders(token);
+      const data = await api.getAllOrders(currentToken);
       setOrders(data || []);
     } catch (err) {
       console.error("Failed to load orders:", err);
@@ -90,10 +129,11 @@ export default function AdminPage() {
 
   // Fetch Users
   const loadUsers = useCallback(async () => {
-    if (!token) return;
+    const currentToken = token || (typeof window !== "undefined" ? localStorage.getItem("viyodha_token") : null);
+    if (!currentToken) return;
     setLoadingUsers(true);
     try {
-      const data = await api.getAllUsers(token);
+      const data = await api.getAllUsers(currentToken);
       setUsers(data || []);
     } catch (err) {
       console.error("Failed to load users:", err);
@@ -263,10 +303,6 @@ export default function AdminPage() {
     ? orders
     : orders.filter((o) => o.order_status.toLowerCase() === orderFilter.toLowerCase());
 
-  const totalRevenue = orders
-    .filter((o) => o.order_status !== "Cancelled")
-    .reduce((sum, o) => sum + Number(o.total_amount), 0);
-
   return (
     <main className="min-h-[85vh] bg-[#EEF3EA] py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -315,23 +351,25 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
+        {/* Key Metrics Cards (Products, Orders, Users) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
           <div className="rounded-2xl border border-[#1F4D1F]/15 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-[#141414]/50">Total Products</p>
-            <p className={`${serif.className} text-3xl font-bold mt-1 text-[#1F4D1F]`}>{products.length}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#141414]/50">Total Products</p>
+            <p className={`${serif.className} text-4xl font-bold mt-1 text-[#1F4D1F]`}>
+              {loadingProducts ? "..." : products.length}
+            </p>
           </div>
           <div className="rounded-2xl border border-[#1F4D1F]/15 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-[#141414]/50">Total Orders</p>
-            <p className={`${serif.className} text-3xl font-bold mt-1 text-[#1F4D1F]`}>{orders.length}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#141414]/50">Total Orders</p>
+            <p className={`${serif.className} text-4xl font-bold mt-1 text-[#1F4D1F]`}>
+              {loadingOrders ? "..." : orders.length}
+            </p>
           </div>
           <div className="rounded-2xl border border-[#1F4D1F]/15 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-[#141414]/50">Registered Users</p>
-            <p className={`${serif.className} text-3xl font-bold mt-1 text-[#1F4D1F]`}>{users.length}</p>
-          </div>
-          <div className="rounded-2xl border border-[#1F4D1F]/15 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-[#141414]/50">Total Sales</p>
-            <p className={`${serif.className} text-3xl font-bold mt-1 text-[#1F4D1F]`}>{inr(totalRevenue)}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#141414]/50">Registered Users</p>
+            <p className={`${serif.className} text-4xl font-bold mt-1 text-[#1F4D1F]`}>
+              {loadingUsers ? "..." : users.length}
+            </p>
           </div>
         </div>
 
