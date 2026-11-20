@@ -67,16 +67,16 @@ export type Product = {
   reviewCount?: number;
 };
 
-const DEFAULT_IMAGE2_MAP: Record<string, string> = {
-  "green-cardamom": "/hero/hero1.jpg",
-  "black-pepper": "/dried1.jpg",
-  "nutmeg": "/wood1.jpg",
-  "bay-leaf": "/hero/hero3.jpg",
-  "bay-leaf-200g": "/hero/hero3.jpg",
-  "cinnamon": "/products/cassia.png",
-  "star-anise": "/wooden2.jpg",
-  "mace": "/hero/hero2.jpg",
-  "cloves": "/hand_sorting.jpg",
+export const DEFAULT_IMAGE2_MAP: Record<string, string> = {
+  "green-cardamom": "/products/cardamom2.png",
+  "black-pepper": "/products/black_pepper2.png",
+  "nutmeg": "/products/nutmeg2.png",
+  "bay-leaf": "/products/bay_leaf100.png",
+  "bay-leaf-200g": "/products/bay_leaf200.png",
+  "cinnamon": "/products/cinnamon2.png",
+  "star-anise": "/products/star_anise2.png",
+  "mace": "/products/mace2.png",
+  "cloves": "/products/cloves2.png",
 };
 
 export function getProductImagePair(p: {
@@ -97,7 +97,7 @@ export function getProductImagePair(p: {
   if (p.slug && DEFAULT_IMAGE2_MAP[p.slug]) {
     return [primary, DEFAULT_IMAGE2_MAP[p.slug]];
   }
-  return [primary, "/wood1.jpg"];
+  return [primary, "/products/cardamom2.png"];
 }
 
 export type Review = {

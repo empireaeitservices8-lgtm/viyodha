@@ -200,6 +200,9 @@ function ProductsContent() {
     brand: "Viyodha",
     type: "Spices",
     image: p.img,
+    image2: p.img2,
+    images: p.images || (p.img2 ? [p.img, p.img2] : [p.img]),
+    details: p.details,
   }));
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -216,7 +219,22 @@ function ProductsContent() {
           category: activeCategory !== "All" ? activeCategory : undefined,
         });
         if (isMounted && fetched && fetched.length > 0) {
-          setProducts(fetched);
+          // Merge fetched products with local products.ts definitions to preserve img2 and custom images
+          const merged = fetched.map((f) => {
+            const staticProd = STATIC_PRODUCTS.find((sp) => sp.slug === f.slug);
+            return {
+              ...f,
+              name: f.name || staticProd?.name || "",
+              description: f.description || staticProd?.desc || "",
+              image: f.image || staticProd?.img || "/products/cardamom.png",
+              image2: f.image2 || staticProd?.img2,
+              images: (f.images && f.images.length > 1)
+                ? f.images
+                : (staticProd?.images || (staticProd?.img2 ? [staticProd.img, staticProd.img2] : undefined)),
+              details: f.details && f.details.length > 0 ? f.details : staticProd?.details,
+            };
+          });
+          setProducts(merged);
         }
       } catch (err) {
         console.warn("Could not fetch products from backend, using local data:", err);
