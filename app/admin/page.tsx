@@ -263,13 +263,13 @@ export default function AdminPage() {
   const handleDeleteOrder = async (orderId: number) => {
     if (
       !confirm(
-        `Are you sure you want to permanently delete Order #${orderId} from the database? This action cannot be undone.`
+        `Are you sure you want to permanently delete Order #${orderId}? This action cannot be undone.`
       )
     )
       return;
     try {
       await api.deleteOrder(orderId, token || undefined);
-      showMsg(`Order #${orderId} deleted permanently from database.`);
+      showMsg(`Order #${orderId} deleted permanently.`);
       await loadOrders();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete order";
@@ -365,11 +365,10 @@ export default function AdminPage() {
         {/* Global Action Message */}
         {actionMessage && (
           <div
-            className={`mb-6 rounded-xl p-4 text-sm font-semibold shadow-sm ${
-              actionMessage.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
-                : "bg-red-50 text-red-800 border border-red-300"
-            }`}
+            className={`mb-6 rounded-xl p-4 text-sm font-semibold shadow-sm ${actionMessage.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+              : "bg-red-50 text-red-800 border border-red-300"
+              }`}
           >
             {actionMessage.text}
           </div>
@@ -402,33 +401,30 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setActiveTab("products")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeTab === "products"
-                ? "border-[#1F4D1F] text-[#1F4D1F]"
-                : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
-            }`}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === "products"
+              ? "border-[#1F4D1F] text-[#1F4D1F]"
+              : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
+              }`}
           >
             📦 Products ({products.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("orders")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeTab === "orders"
-                ? "border-[#1F4D1F] text-[#1F4D1F]"
-                : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
-            }`}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === "orders"
+              ? "border-[#1F4D1F] text-[#1F4D1F]"
+              : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
+              }`}
           >
             🛍️ Orders ({orders.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("users")}
-            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${
-              activeTab === "users"
-                ? "border-[#1F4D1F] text-[#1F4D1F]"
-                : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
-            }`}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === "users"
+              ? "border-[#1F4D1F] text-[#1F4D1F]"
+              : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
+              }`}
           >
             👥 Users ({users.length})
           </button>
@@ -613,8 +609,8 @@ export default function AdminPage() {
                       {submittingProduct
                         ? "Saving..."
                         : editingProduct
-                        ? "Update Product Details"
-                        : "Save & Add Product"}
+                          ? "Update Product Details"
+                          : "Save & Add Product"}
                     </button>
                   </div>
                 </form>
@@ -714,11 +710,10 @@ export default function AdminPage() {
                     key={st}
                     type="button"
                     onClick={() => setOrderFilter(st)}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase transition-colors ${
-                      orderFilter === st
-                        ? "bg-[#1F4D1F] text-white"
-                        : "border border-[#1F4D1F]/20 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
-                    }`}
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase transition-colors ${orderFilter === st
+                      ? "bg-[#1F4D1F] text-white"
+                      : "border border-[#1F4D1F]/20 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
+                      }`}
                   >
                     {st}
                   </button>
@@ -738,8 +733,8 @@ export default function AdminPage() {
                   const items = Array.isArray(o.items)
                     ? o.items
                     : typeof o.items_json === "string"
-                    ? JSON.parse(o.items_json)
-                    : [];
+                      ? JSON.parse(o.items_json)
+                      : [];
 
                   return (
                     <div
@@ -751,15 +746,14 @@ export default function AdminPage() {
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-base text-[#141414]">Order #{o.id}</span>
                             <span
-                              className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-                                o.order_status === "Delivered"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : o.order_status === "Shipped"
+                              className={`rounded-full px-3 py-0.5 text-xs font-bold ${o.order_status === "Delivered"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : o.order_status === "Shipped"
                                   ? "bg-blue-100 text-blue-800"
                                   : o.order_status === "Cancelled"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-[#EEF3EA] text-[#1F4D1F]"
-                              }`}
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-[#EEF3EA] text-[#1F4D1F]"
+                                }`}
                             >
                               {o.order_status}
                             </span>
@@ -794,21 +788,11 @@ export default function AdminPage() {
                             </button>
                           )}
 
-                          {o.order_status !== "Cancelled" && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateOrderStatus(o.id, "Cancelled")}
-                              className="rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-200"
-                            >
-                              Cancel Order
-                            </button>
-                          )}
-
                           <button
                             type="button"
                             onClick={() => handleDeleteOrder(o.id)}
                             className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-200"
-                            title="Delete order permanently from database"
+                            title="Delete order permanently"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -897,11 +881,10 @@ export default function AdminPage() {
                         <td className="px-6 py-4 text-[#141414]/80">{u.phone || "—"}</td>
                         <td className="px-4 py-4">
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
-                              u.role === "admin"
-                                ? "bg-[#C8221E] text-white"
-                                : "bg-emerald-100 text-emerald-800"
-                            }`}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${u.role === "admin"
+                              ? "bg-[#C8221E] text-white"
+                              : "bg-emerald-100 text-emerald-800"
+                              }`}
                           >
                             {u.role}
                           </span>
