@@ -893,7 +893,7 @@ export default function AdminPage() {
                           {u.created_at ? new Date(u.created_at).toLocaleDateString("en-IN") : "—"}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {u.role !== "admin" && (
+                          {u.email !== user?.email && (
                             <button
                               type="button"
                               onClick={() => handleDeleteUser(u.id, u.email)}
