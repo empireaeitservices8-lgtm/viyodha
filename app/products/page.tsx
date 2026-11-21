@@ -8,6 +8,7 @@ import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { api, getImageUrl, getProductImagePair, Product } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 const condensed = Barlow_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -50,7 +51,7 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
     if (adding) return;
 
     if (!user) {
-      alert("Please sign in to add spices to your cart.");
+      toast.error("Please sign in to add spices to your cart.");
       window.location.href = "/login";
       return;
     }
@@ -60,10 +61,11 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
       await api.addToCart(p.id || p.slug, 1, "100g");
       await refreshCartCount();
       setAdded(true);
+      toast.success(`${p.name} added to cart!`);
       setTimeout(() => setAdded(false), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add to cart";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setAdding(false);
     }
@@ -140,11 +142,10 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
                 e.preventDefault();
                 setActiveIdx(idx);
               }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                activeIdx === idx
-                  ? "w-6 bg-[#1F4D1F]"
-                  : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
-              }`}
+              className={`h-2 rounded-full transition-all duration-300 ${activeIdx === idx
+                ? "w-6 bg-[#1F4D1F]"
+                : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
+                }`}
             />
           ))}
         </div>
@@ -254,9 +255,9 @@ function ProductsContent() {
 
   const filtered = query.trim()
     ? products.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.description?.toLowerCase().includes(query.toLowerCase())
-      )
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.description?.toLowerCase().includes(query.toLowerCase())
+    )
     : products;
 
   return (
@@ -277,11 +278,10 @@ function ProductsContent() {
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat === "All" ? "All" : cat)}
-                className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                  activeCategory === cat || (cat === "All" && activeCategory === "All")
-                    ? "bg-[#1F4D1F] text-white"
-                    : "border border-[#1F4D1F]/25 bg-white text-[#1F4D1F] hover:bg-[#1F4D1F]/10"
-                }`}
+                className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${activeCategory === cat || (cat === "All" && activeCategory === "All")
+                  ? "bg-[#1F4D1F] text-white"
+                  : "border border-[#1F4D1F]/25 bg-white text-[#1F4D1F] hover:bg-[#1F4D1F]/10"
+                  }`}
               >
                 {cat}
               </button>

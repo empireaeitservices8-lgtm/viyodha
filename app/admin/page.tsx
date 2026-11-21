@@ -7,6 +7,7 @@ import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Product, Order, User } from "@/lib/api";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -59,6 +60,11 @@ export default function AdminPage() {
 
   const showMsg = (text: string, type: "success" | "error" = "success") => {
     setActionMessage({ type, text });
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
     setTimeout(() => setActionMessage(null), 4000);
   };
 

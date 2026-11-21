@@ -7,6 +7,7 @@ import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS, discountOf, type Product as StaticProduct } from "@/lib/products";
 import { api, getImageUrl, getProductImagePair, Review, Product as ApiProduct } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 const condensed = Barlow_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -90,7 +91,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
 
   const add = async () => {
     if (!user) {
-      alert("Please sign in to add spices to your cart.");
+      toast.error("Please sign in to add spices to your cart.");
       window.location.href = "/login";
       return;
     }
@@ -101,10 +102,11 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
       await api.addToCart(prodId, qty, "100g");
       await refreshCartCount();
       setAdded(true);
+      toast.success(`${product.name} (${qty}x) added to cart!`);
       setTimeout(() => setAdded(false), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add to cart";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setAdding(false);
     }
@@ -113,7 +115,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("Please sign in to leave a review.");
+      toast.error("Please sign in to leave a review.");
       return;
     }
     if (!reviewComment.trim()) return;
@@ -131,10 +133,12 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
         setReviews((prev) => [res.review, ...prev]);
         setReviewComment("");
         setReviewMessage("Thank you! Your review has been added.");
+        toast.success("Thank you! Your review has been published.");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to submit review";
       setReviewMessage(`Error: ${msg}`);
+      toast.error(msg);
     } finally {
       setSubmittingReview(false);
     }
@@ -145,9 +149,10 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
     try {
       await api.deleteReview(reviewId);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      toast.success("Review deleted successfully.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete review";
-      alert(msg);
+      toast.error(msg);
     }
   };
 

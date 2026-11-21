@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 /**
  * Header for Viyodha
@@ -306,6 +307,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                       onClick={() => {
                         setUserMenuOpen(false);
                         logout();
+                        toast.success("Signed out successfully.");
                         router.push("/");
                       }}
                       className="block w-full border-t border-[#1F4D1F]/10 px-4 py-2 text-left text-sm text-[#C8221E] hover:bg-red-50"
@@ -344,9 +346,8 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
 
       {/* Search panel: slides down under the header */}
       <div
-        className={`absolute inset-x-0 top-full transition-all duration-300 ease-out ${
-          searchOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
-        }`}
+        className={`absolute inset-x-0 top-full transition-all duration-300 ease-out ${searchOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
+          }`}
         aria-hidden={!searchOpen}
       >
         {/* Backdrop */}
@@ -517,6 +518,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                     onClick={() => {
                       setMenuOpen(false);
                       logout();
+                      toast.success("Signed out successfully.");
                       router.push("/");
                     }}
                     className="text-sm font-medium text-[#C8221E]"

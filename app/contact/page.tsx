@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Cormorant_Garamond } from "next/font/google";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 /**
  * app/contact/page.tsx  (Viyodha contact page)
@@ -139,6 +140,7 @@ function ContactForm() {
     try {
       await api.sendContact({ name, phone, email, message });
       setSent(true);
+      toast.success("Message sent successfully! We will get back to you shortly.");
     } catch {
       const subject = `${topic} from ${name}`;
       const body = [
@@ -151,6 +153,7 @@ function ContactForm() {
       ].join("\n");
       window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       setSent(true);
+      toast.success("Opening your email app to send enquiry...");
     }
   };
 

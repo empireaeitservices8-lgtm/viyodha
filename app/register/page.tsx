@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthShell, { Field, PasswordField, fieldClass, primaryBtn, focusRing, GREEN } from "@/components/AuthShell";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,22 +25,28 @@ export default function RegisterPage() {
     const confirm = String(f.get("confirm"));
 
     if (password !== confirm) {
-      setError("The two passwords do not match. Please verify and try again.");
+      const msg = "The two passwords do not match. Please verify and try again.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      const msg = "Password must be at least 6 characters long.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     setLoading(true);
     try {
       await register({ username, phone, email, password });
+      toast.success("Account created successfully! Welcome to Viyodha.");
       router.push("/products");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "We could not create your account. Please try again.";
       setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

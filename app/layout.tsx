@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "../components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              style: {
+                borderRadius: "1rem",
+                fontFamily: "inherit",
+              },
+            }}
+          />
           <Header />
           {children}
           <Footer />

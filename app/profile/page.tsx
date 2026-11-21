@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -40,12 +41,16 @@ export default function ProfilePage() {
     setMessage(null);
 
     if (newPassword && newPassword !== confirmPassword) {
-      setMessage({ type: "error", text: "New passwords do not match." });
+      const msg = "New passwords do not match.";
+      setMessage({ type: "error", text: msg });
+      toast.error(msg);
       return;
     }
 
     if (newPassword && newPassword.length < 6) {
-      setMessage({ type: "error", text: "New password must be at least 6 characters long." });
+      const msg = "New password must be at least 6 characters long.";
+      setMessage({ type: "error", text: msg });
+      toast.error(msg);
       return;
     }
 
@@ -69,10 +74,13 @@ export default function ProfilePage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setMessage({ type: "success", text: "Profile details updated successfully!" });
+      const successMsg = "Profile details updated successfully!";
+      setMessage({ type: "success", text: successMsg });
+      toast.success(successMsg);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update profile";
       setMessage({ type: "error", text: msg });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -125,9 +133,8 @@ export default function ProfilePage() {
         <div className="rounded-[2rem] border border-[#1F4D1F]/15 bg-white p-6 sm:p-10 shadow-sm">
           {message && (
             <div
-              className={`mb-6 rounded-xl p-4 text-sm font-medium ${
-                message.type === "success" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"
-              }`}
+              className={`mb-6 rounded-xl p-4 text-sm font-medium ${message.type === "success" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"
+                }`}
             >
               {message.text}
             </div>

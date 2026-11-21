@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthShell, { Field, PasswordField, fieldClass, primaryBtn, focusRing, GREEN } from "@/components/AuthShell";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function LoginPage() {
 
     try {
       const user = await login(email, password);
+      toast.success("Welcome back to Viyodha!");
       if (user.role === "admin") {
         router.push("/admin");
       } else {
@@ -31,6 +33,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "The email or password is incorrect.";
       setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

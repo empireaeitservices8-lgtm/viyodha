@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { api, getImageUrl, CartItem } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -266,8 +267,10 @@ export default function CartPage() {
       await api.removeCartItem(cartId, token || undefined);
       await fetchCart();
       await refreshCartCount();
+      toast.success("Item removed from cart");
     } catch (err) {
       console.error("Remove error:", err);
+      toast.error("Failed to remove item from cart");
     }
   };
 

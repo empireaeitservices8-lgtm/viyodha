@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 /**
  * app/page.tsx  (Viyodha home page)
@@ -302,7 +303,7 @@ const add = async (e: React.MouseEvent) => {
   if (adding) return;
 
   if (!user) {
-    alert("Please sign in to add spices to your cart.");
+    toast.error("Please sign in to add spices to your cart.");
     window.location.href = "/login";
     return;
   }
@@ -312,10 +313,11 @@ const add = async (e: React.MouseEvent) => {
     await api.addToCart(p.slug, 1, "100g");
     await refreshCartCount();
     setAdded(true);
+    toast.success(`${p.name} added to cart!`);
     setTimeout(() => setAdded(false), 2000);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to add to cart";
-    alert(msg);
+    toast.error(msg);
   } finally {
     setAdding(false);
   }

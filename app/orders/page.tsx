@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Order } from "@/lib/api";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -60,10 +61,11 @@ export default function MyOrdersPage() {
     setCancellingId(orderId);
     try {
       await api.cancelOrder(orderId, token || undefined);
+      toast.success(`Order #${orderId} has been cancelled.`);
       await fetchOrders();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to cancel order";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setCancellingId(null);
     }

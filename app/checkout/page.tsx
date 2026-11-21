@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { api, getImageUrl, CartItem } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
 
@@ -125,12 +126,16 @@ export default function CheckoutPage() {
     setError("");
 
     if (!items || items.length === 0) {
-      setError("Your cart is empty. Please add spices before checking out.");
+      const msg = "Your cart is empty. Please add spices before checking out.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     if (!address.trim() || !phone.trim() || !name.trim()) {
-      setError("Please fill in your name, contact phone and delivery address.");
+      const msg = "Please fill in your name, contact phone and delivery address.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -172,6 +177,7 @@ export default function CheckoutPage() {
       );
 
       await refreshCartCount();
+      toast.success("Order placed successfully! Thank you for choosing Viyodha.");
       setPlacedOrder({
         id: res.order.id,
         name: name.split(" ")[0] || "Valued Customer",
@@ -180,6 +186,7 @@ export default function CheckoutPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to place order";
       setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
