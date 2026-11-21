@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
@@ -54,6 +54,9 @@ export default function AdminPage() {
   // Users state
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+
+  // Customer users (exclude admin accounts)
+  const customerUsers = useMemo(() => users.filter((u) => u.role !== "admin"), [users]);
 
   // Messages
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -391,7 +394,7 @@ export default function AdminPage() {
           <div className="rounded-2xl border border-[#1F4D1F]/15 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-[#141414]/50">Registered Users</p>
             <p className={`${serif.className} text-4xl font-bold mt-1 text-[#1F4D1F]`}>
-              {loadingUsers ? "..." : users.length}
+              {loadingUsers ? "..." : customerUsers.length}
             </p>
           </div>
         </div>
@@ -426,7 +429,7 @@ export default function AdminPage() {
               : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
               }`}
           >
-            👥 Users ({users.length})
+            👥 Users ({customerUsers.length})
           </button>
         </div>
 
@@ -858,6 +861,10 @@ export default function AdminPage() {
 
             {loadingUsers ? (
               <div className="py-20 text-center text-[#1F4D1F]">Loading users...</div>
+            ) : customerUsers.length === 0 ? (
+              <div className="rounded-[2rem] bg-white p-12 text-center shadow-sm">
+                <p className="text-[#141414]/70">No customer accounts registered yet.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto rounded-[2rem] border border-[#1F4D1F]/15 bg-white shadow-sm">
                 <table className="w-full text-left text-sm">
@@ -873,19 +880,14 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1F4D1F]/10">
-                    {users.map((u) => (
+                    {customerUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-[#EEF3EA]/30 transition-colors">
                         <td className="px-6 py-4 font-mono text-xs">{u.id}</td>
                         <td className="px-6 py-4 font-semibold text-[#141414]">{u.username}</td>
                         <td className="px-6 py-4 text-[#141414]/80">{u.email}</td>
                         <td className="px-6 py-4 text-[#141414]/80">{u.phone || "—"}</td>
                         <td className="px-4 py-4">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${u.role === "admin"
-                              ? "bg-[#C8221E] text-white"
-                              : "bg-emerald-100 text-emerald-800"
-                              }`}
-                          >
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold uppercase text-emerald-800">
                             {u.role}
                           </span>
                         </td>
@@ -893,15 +895,13 @@ export default function AdminPage() {
                           {u.created_at ? new Date(u.created_at).toLocaleDateString("en-IN") : "—"}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {u.email !== user?.email && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(u.id, u.email)}
-                              className="rounded-lg bg-red-50 px-3 py-1 text-xs font-bold text-[#C8221E] hover:bg-[#C8221E] hover:text-white"
-                            >
-                              Delete
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u.id, u.email)}
+                            className="rounded-lg bg-red-50 px-3 py-1 text-xs font-bold text-[#C8221E] hover:bg-[#C8221E] hover:text-white"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
