@@ -259,6 +259,24 @@ export default function AdminPage() {
     }
   };
 
+  // Delete order permanently
+  const handleDeleteOrder = async (orderId: number) => {
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete Order #${orderId} from the database? This action cannot be undone.`
+      )
+    )
+      return;
+    try {
+      await api.deleteOrder(orderId, token || undefined);
+      showMsg(`Order #${orderId} deleted permanently from database.`);
+      await loadOrders();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete order";
+      showMsg(msg, "error");
+    }
+  };
+
   // Delete customer
   const handleDeleteUser = async (userId: number, email: string) => {
     if (!confirm(`Are you sure you want to delete user account "${email}"?`)) return;
@@ -732,7 +750,17 @@ export default function AdminPage() {
                         <div>
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-base text-[#141414]">Order #{o.id}</span>
-                            <span className="rounded-full bg-[#EEF3EA] px-3 py-0.5 text-xs font-bold text-[#1F4D1F]">
+                            <span
+                              className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+                                o.order_status === "Delivered"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : o.order_status === "Shipped"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : o.order_status === "Cancelled"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-[#EEF3EA] text-[#1F4D1F]"
+                              }`}
+                            >
                               {o.order_status}
                             </span>
                             <span className="text-xs text-[#141414]/50">
@@ -744,13 +772,13 @@ export default function AdminPage() {
                           </p>
                         </div>
 
-                        {/* Status update buttons */}
-                        <div className="flex items-center gap-2">
-                          {o.order_status !== "Shipped" && o.order_status !== "Delivered" && (
+                        {/* Status update & delete actions */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {o.order_status !== "Shipped" && (
                             <button
                               type="button"
                               onClick={() => handleUpdateOrderStatus(o.id, "Shipped")}
-                              className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-700"
+                              className="rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 shadow-sm"
                             >
                               Mark as Shipped
                             </button>
@@ -760,7 +788,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => handleUpdateOrderStatus(o.id, "Delivered")}
-                              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                              className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 shadow-sm"
                             >
                               Mark as Delivered
                             </button>
@@ -770,11 +798,23 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => handleUpdateOrderStatus(o.id, "Cancelled")}
-                              className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-200"
+                              className="rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-200"
                             >
-                              Cancel
+                              Cancel Order
                             </button>
                           )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(o.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3.5 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                            title="Delete order permanently from database"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                          </button>
                         </div>
                       </div>
 

@@ -461,6 +461,14 @@ export const api = {
     );
   },
 
+  async deleteOrder(orderId: number | string, token?: string) {
+    const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(token),
+    });
+    return handleResponse<{ success: boolean; message: string }>(res, "Failed to delete order");
+  },
+
   // Admin users
   async getAllUsers(token?: string) {
     const res = await fetch(`${API_BASE_URL}/admin/users`, {
