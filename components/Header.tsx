@@ -24,14 +24,14 @@ const COLORS = {
 };
 
 const PRODUCTS = [
-  { label: "Green Cardamom", slug: "green-cardamom" },
-  { label: "Black Pepper", slug: "black-pepper" },
-  { label: "Star Anise", slug: "star-anise" },
-  { label: "Nutmeg", slug: "nutmeg" },
-  { label: "Cinnamon", slug: "cinnamon" },
-  { label: "Bay Leaf", slug: "bay-leaf" },
-  { label: "Mace", slug: "mace" },
-  { label: "Cloves", slug: "cloves" },
+  { label: "Green Cardamom (ഏലക്ക)", slug: "green-cardamom" },
+  { label: "Black Pepper (കുരുമുളക്)", slug: "black-pepper" },
+  { label: "Star Anise (തക്കോലം)", slug: "star-anise" },
+  { label: "Nutmeg (ജാതിക്ക)", slug: "nutmeg" },
+  { label: "Cinnamon (കറുവപ്പട്ട)", slug: "cinnamon" },
+  { label: "Bay Leaf (വഴനയില)", slug: "bay-leaf" },
+  { label: "Mace (ജാതിപത്രി)", slug: "mace" },
+  { label: "Cloves (ഗ്രാമ്പൂ)", slug: "cloves" },
 ];
 
 function ChevronIcon({ open }: { open: boolean }) {

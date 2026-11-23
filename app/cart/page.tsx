@@ -93,11 +93,6 @@ function CartRow({
             <span className="block text-lg font-semibold" style={{ color: GREEN }}>
               {inr(price * item.quantity)}
             </span>
-            {mrp > price && (
-              <span className="block text-sm text-[#141414]/45 line-through">
-                {inr(mrp * item.quantity)}
-              </span>
-            )}
           </p>
         </div>
 

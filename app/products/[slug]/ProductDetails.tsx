@@ -23,11 +23,20 @@ type ProductDetailsProps = {
 export default function ProductDetails({ product: initialProduct }: ProductDetailsProps) {
   const { user, refreshCartCount } = useAuth();
   const [product, setProduct] = useState<StaticProduct | ApiProduct>(initialProduct);
+  const [selectedPack, setSelectedPack] = useState<"100g" | "200g">("100g");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  const p100 = "price100g" in product && product.price100g
+    ? Number(product.price100g)
+    : Number(product.price);
+  const p200 = "price200g" in product && product.price200g
+    ? Number(product.price200g)
+    : Math.round(p100 * 1.9);
+  const currentPrice = selectedPack === "200g" ? p200 : p100;
 
   const [rawImg1, rawImg2] = getProductImagePair(product);
   const images = [getImageUrl(rawImg1), getImageUrl(rawImg2)];
@@ -49,7 +58,6 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewMessage, setReviewMessage] = useState("");
 
-  const off = discountOf(product as StaticProduct) || 0;
   const more = PRODUCTS.filter((p) => p.slug !== product.slug).slice(0, 3);
 
   // Load live reviews and live product details
@@ -66,6 +74,9 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
           setProduct((prev) => ({
             ...prev,
             ...live,
+            price: live.price100g || live.price || staticProd?.price || 0,
+            price100g: live.price100g || staticProd?.price100g || live.price,
+            price200g: live.price200g || staticProd?.price200g || Math.round(Number(live.price || 0) * 1.9),
             image: liveImg,
             img: liveImg,
             image2: live.image2 || ("image2" in prev ? prev.image2 : undefined) || staticProd?.img2,
@@ -99,10 +110,10 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
     setAdding(true);
     try {
       const prodId = ("id" in product && product.id) ? product.id : product.slug;
-      await api.addToCart(prodId, qty, "100g");
+      await api.addToCart(prodId, qty, selectedPack);
       await refreshCartCount();
       setAdded(true);
-      toast.success(`${product.name} (${qty}x) added to cart!`);
+      toast.success(`${product.name} (${selectedPack} x ${qty}) added to cart!`);
       setTimeout(() => setAdded(false), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add to cart";
@@ -183,19 +194,6 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              {off > 0 && (
-                <span
-                  className={`${condensed.className} absolute left-4 top-4 z-10 grid h-16 w-16 place-items-center rounded-full text-center text-lg font-bold leading-[1.05] text-white`}
-                  style={{ backgroundColor: RED }}
-                >
-                  <span>
-                    {off}%
-                    <br />
-                    OFF
-                  </span>
-                </span>
-              )}
-
               {/* Photo pill badge */}
               <span className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -305,13 +303,39 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
               </div>
             )}
 
-            <p className={`${condensed.className} text-3xl`}>
-              Rs. {Number(product.price).toFixed(2)}
-              {product.mrp && Number(product.mrp) > Number(product.price) && (
-                <span className="ml-3 text-xl font-semibold text-[#141414]/60 line-through">
-                  Rs. {Number(product.mrp).toFixed(2)}
-                </span>
-              )}
+            {/* Pack Size Selector */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#141414]/60">Select Pack Size</span>
+              <div className="flex flex-wrap gap-3" role="group" aria-label="Pack size options">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPack("100g")}
+                  className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
+                    selectedPack === "100g"
+                      ? "bg-[#1F4D1F] text-white shadow-sm ring-2 ring-[#1F4D1F]/20"
+                      : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
+                  }`}
+                >
+                  100 g &middot; Rs. {p100.toFixed(2)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPack("200g")}
+                  className={`rounded-2xl px-6 py-3 text-sm font-bold transition-all ${
+                    selectedPack === "200g"
+                      ? "bg-[#1F4D1F] text-white shadow-sm ring-2 ring-[#1F4D1F]/20"
+                      : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
+                  }`}
+                >
+                  200 g &middot; Rs. {p200.toFixed(2)}
+                </button>
+              </div>
+            </div>
+
+            {/* Single Price (No MRP, No Strike-through) */}
+            <p className={`${condensed.className} text-3xl font-bold text-[#1F4D1F]`}>
+              Rs. {currentPrice.toFixed(2)}
+              <span className="ml-2 text-base font-normal text-[#141414]/60">/ {selectedPack}</span>
             </p>
 
             <p className="max-w-lg text-[#141414]/75">

@@ -17,21 +17,17 @@ const GREEN = "#1F4D1F";
 const TINT = "#EEF3EA";
 const RED = "#C8221E";
 
-function calculateDiscount(price: number, mrp?: number) {
-  if (!mrp || mrp <= price) return 0;
-  return Math.round((1 - price / mrp) * 100);
-}
-
 function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }) {
   const { user, refreshCartCount } = useAuth();
+  const [selectedPack, setSelectedPack] = useState<"100g" | "200g">("100g");
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const priceNum = Number(p.price);
-  const mrpNum = p.mrp ? Number(p.mrp) : undefined;
-  const off = calculateDiscount(priceNum, mrpNum);
+  const p100 = p.price100g ? Number(p.price100g) : Number(p.price);
+  const p200 = p.price200g ? Number(p.price200g) : Math.round(p100 * 1.9);
+  const currentPrice = selectedPack === "200g" ? p200 : p100;
 
   const [img1Raw, img2Raw] = getProductImagePair(p);
   const images = [getImageUrl(img1Raw), getImageUrl(img2Raw)];
@@ -58,10 +54,10 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
 
     setAdding(true);
     try {
-      await api.addToCart(p.id || p.slug, 1, "100g");
+      await api.addToCart(p.id || p.slug, 1, selectedPack);
       await refreshCartCount();
       setAdded(true);
-      toast.success(`${p.name} added to cart!`);
+      toast.success(`${p.name} (${selectedPack}) added to cart!`);
       setTimeout(() => setAdded(false), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add to cart";
@@ -73,19 +69,6 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
 
   return (
     <article className="group relative flex flex-col items-center text-center">
-      {off > 0 && (
-        <span
-          className={`${condensed.className} pointer-events-none absolute -top-3 left-1 z-10 grid h-16 w-16 place-items-center rounded-full text-center text-lg font-bold leading-[1.05] text-white sm:left-4`}
-          style={{ backgroundColor: RED }}
-        >
-          <span>
-            {off}%
-            <br />
-            OFF
-          </span>
-        </span>
-      )}
-
       {/* Dual Image Auto-sliding Carousel without outer white background */}
       <div
         className="relative aspect-square w-full overflow-hidden"
@@ -151,34 +134,64 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
         </div>
       </div>
 
-      <div className="mt-6 flex w-full flex-1 flex-col items-center gap-3">
+      <div className="mt-5 flex w-full flex-1 flex-col items-center gap-2">
         <h2 className={`${condensed.className} max-w-[18rem] text-2xl font-semibold uppercase leading-tight text-[#141414]`}>
           <Link
             href={`/products/${p.slug}`}
-            className="after:absolute after:inset-0 after:z-[1] after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1F4D1F]"
+            className="hover:text-[#1F4D1F] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1F4D1F]"
           >
             {p.name}
           </Link>
         </h2>
 
-        <p className={`${condensed.className} text-xl text-[#141414]`}>
-          Rs. {priceNum.toFixed(2)}
-          {mrpNum && mrpNum > priceNum && (
-            <span className="ml-3 text-base font-semibold text-[#141414]/70 line-through">
-              Rs. {mrpNum.toFixed(2)}
-            </span>
-          )}
+        {/* Size Selection Toggle Pills */}
+        <div className="relative z-10 flex items-center gap-2 my-1" role="group" aria-label="Select pack size">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setSelectedPack("100g");
+            }}
+            className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
+              selectedPack === "100g"
+                ? "bg-[#1F4D1F] text-white shadow-sm"
+                : "border border-[#1F4D1F]/30 bg-white/80 text-[#1F4D1F] hover:bg-[#EEF3EA]"
+            }`}
+          >
+            100g &middot; ₹{p100}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setSelectedPack("200g");
+            }}
+            className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
+              selectedPack === "200g"
+                ? "bg-[#1F4D1F] text-white shadow-sm"
+                : "border border-[#1F4D1F]/30 bg-white/80 text-[#1F4D1F] hover:bg-[#EEF3EA]"
+            }`}
+          >
+            200g &middot; ₹{p200}
+          </button>
+        </div>
+
+        {/* Single Price (No MRP, No Strike-through) */}
+        <p className={`${condensed.className} text-2xl font-bold text-[#1F4D1F]`}>
+          Rs. {currentPrice.toFixed(2)}
         </p>
 
         <button
           type="button"
           onClick={add}
           disabled={adding}
-          className={`${condensed.className} relative z-10 mt-auto rounded-full px-10 py-3 text-xl font-bold uppercase text-white transition-all hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]`}
+          className={`${condensed.className} relative z-10 mt-auto rounded-full px-8 py-3 text-xl font-bold uppercase text-white transition-all hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]`}
           style={{ backgroundColor: added ? "#14532d" : GREEN }}
           aria-live="polite"
         >
-          {adding ? "Adding..." : added ? "✓ Added" : "Add to cart"}
+          {adding ? "Adding..." : added ? "✓ Added" : `Add to cart (${selectedPack})`}
         </button>
       </div>
     </article>
@@ -195,7 +208,8 @@ function ProductsContent() {
     name: p.name,
     slug: p.slug,
     price: p.price,
-    mrp: p.mrp,
+    price100g: p.price100g,
+    price200g: p.price200g,
     description: p.desc,
     category: "Whole Spices",
     brand: "Viyodha",
@@ -230,6 +244,9 @@ function ProductsContent() {
               ...f,
               name: f.name || staticProd?.name || "",
               description: f.description || staticProd?.desc || "",
+              price: f.price100g || f.price || staticProd?.price || 0,
+              price100g: f.price100g || staticProd?.price100g || f.price,
+              price200g: f.price200g || staticProd?.price200g || Math.round(Number(f.price || 0) * 1.9),
               image: resolvedImg,
               image2: f.image2 || staticProd?.img2,
               images: (f.images && f.images.length > 1)

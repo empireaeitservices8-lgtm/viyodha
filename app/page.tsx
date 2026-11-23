@@ -49,52 +49,56 @@ const SLIDES = [
 ];
 
 const VIDEOS = [
-  { src: "/videos/cardamom.mp4", name: "Green Cardamom 100g", price: 495, mrp: 599, thumb: "/products/cardamom.png" },
-  { src: "/videos/pepper.mp4", name: "Black Pepper 100g", price: 349, mrp: 429, thumb: "/products/black_pepper.png" },
-  { src: "/videos/nutmeg.mp4", name: "Nutmeg (Whole)", price: 599, mrp: 749, thumb: "/products/nutmeg.png" },
-  { src: "/videos/bayleaf.mp4", name: "Bay Leaf 100g", price: 129, mrp: 159, thumb: "/products/bay_leaf.png" },
+  { src: "/videos/cardamom.mp4", name: "Green Cardamom (ഏലക്ക)", price: 260, thumb: "/products/cardamom.png" },
+  { src: "/videos/pepper.mp4", name: "Black Pepper (കുരുമുളക്)", price: 349, thumb: "/products/black_pepper.png" },
+  { src: "/videos/nutmeg.mp4", name: "Nutmeg (ജാതിക്ക)", price: 599, thumb: "/products/nutmeg.png" },
+  { src: "/videos/bayleaf.mp4", name: "Bay Leaf (വഴനയില)", price: 129, thumb: "/products/bay_leaf.png" },
 ];
 
 const PRODUCTS = [
   {
-    name: "Cardamom",
+    name: "Green Cardamom (ഏലക്ക)",
     slug: "green-cardamom",
     desc: "Plump, aromatic 8mm+ pods, sun-dried and graded by hand for maximum essential oil retention.",
-    price: 495,
-    mrp: 599,
+    price: 260,
+    price100g: 260,
+    price200g: 495,
     img: "/products/cardamom.png",
     img2: "/products/cardamom2.png",
     grade: "8mm+ Bold",
     origin: "Idukki, Kerala",
   },
   {
-    name: "Black Pepper",
+    name: "Black Pepper (കുരുമുളക്)",
     slug: "black-pepper",
     desc: "Malabar Garbled extra-bold peppercorns, slow-dried to lock in sharp piperine heat and woody aroma.",
     price: 349,
-    mrp: 429,
+    price100g: 349,
+    price200g: 660,
     img: "/products/black_pepper.png",
     img2: "/products/black_pepper2.png",
     grade: "Malabar Garbled",
     origin: "Wayanad, Kerala",
   },
   {
-    name: "Cinnamon",
+    name: "Cinnamon (കറുവപ്പട്ട)",
     slug: "cinnamon",
     desc: "Delicate Ceylon-style thin quills with a naturally sweet aroma and warm, fragrant finish.",
-    price: 299,
-    mrp: 369,
+    price: 249,
+    price100g: 249,
+    price200g: 470,
     img: "/products/cinnamon.png",
     img2: "/products/cinnamon2.png",
     grade: "Ceylon type",
     origin: "Kerala Hills",
   },
   {
-    name: "Nutmeg",
+    name: "Nutmeg (ജാതിക്ക)",
     slug: "nutmeg",
     desc: "Whole sound nutmeg kernels harvested from ripe yellow pericarp, packed with intense warm aroma.",
     price: 599,
-    mrp: 749,
+    price100g: 599,
+    price200g: 1140,
     img: "/products/nutmeg.png",
     img2: "/products/nutmeg2.png",
     grade: "Whole Sound",
@@ -252,8 +256,7 @@ function VideoCard({ v }: { v: (typeof VIDEOS)[number] }) {
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[#141414]">{v.name}</p>
           <p className="text-sm">
-            <span className="font-semibold" style={{ color: GREEN }}>₹{v.price}</span>{" "}
-            <span className="text-[#141414]/45 line-through">₹{v.mrp}</span>
+            <span className="font-semibold" style={{ color: GREEN }}>₹{v.price}</span>
           </p>
         </div>
       </div>
@@ -282,12 +285,15 @@ function VideoRow() {
 
 function HomeProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
   const { user, refreshCartCount } = useAuth();
+  const [selectedPack, setSelectedPack] = useState<"100g" | "200g">("100g");
   const [activeIdx, setActiveIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
 
   const images = [p.img, p.img2];
-  const off = Math.round((1 - p.price / p.mrp) * 100);
+  const p100 = p.price100g || p.price;
+  const p200 = p.price200g || Math.round(p100 * 1.9);
+  const currentPrice = selectedPack === "200g" ? p200 : p100;
 
   // Automatically slide to 2nd image every 3.5 seconds (also when hovered)
   useEffect(() => {
@@ -295,159 +301,168 @@ function HomeProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
       setActiveIdx((prev) => (prev === 0 ? 1 : 0));
     }, 3500);
     return () => clearInterval(timer);
-}, []);
+  }, []);
 
-const add = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  e.preventDefault();
-  if (adding) return;
+  const add = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (adding) return;
 
-  if (!user) {
-    toast.error("Please sign in to add spices to your cart.");
-    window.location.href = "/login";
-    return;
-  }
+    if (!user) {
+      toast.error("Please sign in to add spices to your cart.");
+      window.location.href = "/login";
+      return;
+    }
 
-  setAdding(true);
-  try {
-    await api.addToCart(p.slug, 1, "100g");
-    await refreshCartCount();
-    setAdded(true);
-    toast.success(`${p.name} added to cart!`);
-    setTimeout(() => setAdded(false), 2000);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to add to cart";
-    toast.error(msg);
-  } finally {
-    setAdding(false);
-  }
-};
+    setAdding(true);
+    try {
+      await api.addToCart(p.slug, 1, selectedPack);
+      await refreshCartCount();
+      setAdded(true);
+      toast.success(`${p.name} (${selectedPack}) added to cart!`);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to add to cart";
+      toast.error(msg);
+    } finally {
+      setAdding(false);
+    }
+  };
 
-return (
-  <article
-    className="group relative flex flex-col overflow-hidden rounded-3xl border border-[#1F4D1F]/15 bg-white shadow-sm transition-all hover:shadow-lg"
-  >
-    {/* Discount badge */}
-    {off > 0 && (
-      <span
-        className={`${condensed.className} pointer-events-none absolute left-3 top-3 z-20 grid h-12 w-12 place-items-center rounded-full text-center text-xs font-bold leading-tight text-white shadow-md`}
-        style={{ backgroundColor: RED }}
-      >
-        <span>
-          {off}%<br />OFF
-        </span>
+  return (
+    <article
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-[#1F4D1F]/15 bg-white shadow-sm transition-all hover:shadow-lg"
+    >
+      {/* 2 Photos Badge */}
+      <span className="pointer-events-none absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+          <circle cx="9" cy="9" r="2" />
+          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
+        <span>{activeIdx + 1}/2</span>
       </span>
-    )}
 
-    {/* 2 Photos Badge */}
-    <span className="pointer-events-none absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#1F4D1F] shadow-sm backdrop-blur-sm">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-        <circle cx="9" cy="9" r="2" />
-        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-      </svg>
-      <span>{activeIdx + 1}/2</span>
-    </span>
-
-    {/* Dual Image Auto-sliding Carousel without outer white background */}
-    <div className="relative aspect-square w-full overflow-hidden bg-[#EEF3EA]">
-      {/* Sliding track */}
-      <div
-        className="flex h-full w-full transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateX(-${activeIdx * 100}%)` }}
-      >
-        <div className="relative h-full w-full shrink-0">
-          <Image
-            src={images[0]}
-            alt={p.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, 50vw"
-            className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
-          />
+      {/* Dual Image Auto-sliding Carousel without outer white background */}
+      <div className="relative aspect-square w-full overflow-hidden bg-[#EEF3EA]">
+        {/* Sliding track */}
+        <div
+          className="flex h-full w-full transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${activeIdx * 100}%)` }}
+        >
+          <div className="relative h-full w-full shrink-0">
+            <Image
+              src={images[0]}
+              alt={p.name}
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+          <div className="relative h-full w-full shrink-0">
+            <Image
+              src={images[1]}
+              alt={`${p.name} secondary view`}
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
         </div>
-        <div className="relative h-full w-full shrink-0">
-          <Image
-            src={images[1]}
-            alt={`${p.name} secondary view`}
-            fill
-            sizes="(min-width: 1024px) 25vw, 50vw"
-            className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
-          />
+
+        {/* Interactive Dots Switcher */}
+        <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center items-center gap-1.5">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`View photo ${idx + 1} of ${p.name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setActiveIdx(idx);
+              }}
+              className={`h-2 rounded-full transition-all duration-300 ${activeIdx === idx
+                ? "w-6 bg-[#1F4D1F]"
+                : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
+                }`}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Interactive Dots Switcher */}
-      <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center items-center gap-1.5">
-        {images.map((_, idx) => (
+      {/* Info Body */}
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className={`${serif.className} text-2xl font-bold text-[#141414]`}>
+            <Link href={`/products/${p.slug}`} className="hover:text-[#1F4D1F] transition-colors">
+              {p.name}
+            </Link>
+          </h3>
+          <p className={`${condensed.className} text-2xl font-bold text-[#1F4D1F]`}>
+            ₹{currentPrice}
+          </p>
+        </div>
+
+        {/* Size Selection Toggle Pills */}
+        <div className="flex items-center gap-2" role="group" aria-label="Select size">
           <button
-            key={idx}
             type="button"
-            aria-label={`View photo ${idx + 1} of ${p.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setActiveIdx(idx);
-            }}
-            className={`h-2 rounded-full transition-all duration-300 ${activeIdx === idx
-              ? "w-6 bg-[#1F4D1F]"
-              : "w-2 bg-[#1F4D1F]/30 hover:bg-[#1F4D1F]/70"
-              }`}
-          />
-        ))}
-      </div>
-    </div>
+            onClick={() => setSelectedPack("100g")}
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
+              selectedPack === "100g"
+                ? "bg-[#1F4D1F] text-white shadow-sm"
+                : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
+            }`}
+          >
+            100g &middot; ₹{p100}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPack("200g")}
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
+              selectedPack === "200g"
+                ? "bg-[#1F4D1F] text-white shadow-sm"
+                : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
+            }`}
+          >
+            200g &middot; ₹{p200}
+          </button>
+        </div>
 
-    {/* Info Body */}
-    <div className="flex flex-1 flex-col gap-3 p-5">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className={`${serif.className} text-2xl font-bold text-[#141414]`}>
-          <Link href={`/products/${p.slug}`} className="hover:text-[#1F4D1F] transition-colors">
-            {p.name}
+        <p className="line-clamp-2 text-sm text-[#141414]/70">{p.desc}</p>
+
+        <dl className="mt-auto grid grid-cols-2 gap-2 border-t border-[#1F4D1F]/10 pt-3 text-xs">
+          <div>
+            <dt className="text-[#141414]/50">Grade</dt>
+            <dd className="font-semibold text-[#1F4D1F]">{p.grade}</dd>
+          </div>
+          <div>
+            <dt className="text-[#141414]/50">Origin</dt>
+            <dd className="font-semibold text-[#1F4D1F]">{p.origin}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Link
+            href={`/products/${p.slug}`}
+            className="rounded-full border border-[#1F4D1F] py-2 text-center text-sm font-semibold text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white"
+          >
+            Details
           </Link>
-        </h3>
-        <p className={`${condensed.className} text-xl font-bold text-[#1F4D1F]`}>
-          ₹{p.price}
-          {p.mrp > p.price && (
-            <span className="ml-2 text-sm font-semibold text-[#141414]/50 line-through">
-              ₹{p.mrp}
-            </span>
-          )}
-        </p>
-      </div>
-
-      <p className="line-clamp-2 text-sm text-[#141414]/70">{p.desc}</p>
-
-      <dl className="mt-auto grid grid-cols-2 gap-2 border-t border-[#1F4D1F]/10 pt-3 text-xs">
-        <div>
-          <dt className="text-[#141414]/50">Grade</dt>
-          <dd className="font-semibold text-[#1F4D1F]">{p.grade}</dd>
+          <button
+            type="button"
+            onClick={add}
+            disabled={adding}
+            className="rounded-full py-2 text-center text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+            style={{ backgroundColor: added ? "#14532d" : GREEN }}
+          >
+            {adding ? "Adding..." : added ? "✓ Added" : `Add to cart (${selectedPack})`}
+          </button>
         </div>
-        <div>
-          <dt className="text-[#141414]/50">Origin</dt>
-          <dd className="font-semibold text-[#1F4D1F]">{p.origin}</dd>
-        </div>
-      </dl>
-
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <Link
-          href={`/products/${p.slug}`}
-          className="rounded-full border border-[#1F4D1F] py-2 text-center text-sm font-semibold text-[#1F4D1F] transition-colors hover:bg-[#1F4D1F] hover:text-white"
-        >
-          Details
-        </Link>
-        <button
-          type="button"
-          onClick={add}
-          disabled={adding}
-          className="rounded-full py-2 text-center text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-          style={{ backgroundColor: added ? "#14532d" : GREEN }}
-        >
-          {adding ? "Adding..." : added ? "✓ Added" : "Add to cart"}
-        </button>
       </div>
-    </div>
-  </article>
-);
+    </article>
+  );
 }
 
 function ProductCards() {

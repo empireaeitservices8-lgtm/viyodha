@@ -50,6 +50,8 @@ export type Product = {
   name: string;
   slug: string;
   price: number;
+  price100g?: number;
+  price200g?: number;
   mrp?: number;
   category: string;
   brand: string;
@@ -67,12 +69,21 @@ export type Product = {
   reviewCount?: number;
 };
 
+export function getPackPrice(
+  p: { price?: number; price100g?: number; price200g?: number } | null | undefined,
+  pack: "100g" | "200g" | string = "100g"
+): number {
+  if (!p) return 0;
+  const p100 = p.price100g ? Number(p.price100g) : Number(p.price || 0);
+  const p200 = p.price200g ? Number(p.price200g) : Math.round(p100 * 1.9);
+  return pack === "200g" ? p200 : p100;
+}
+
 export const DEFAULT_IMAGE2_MAP: Record<string, string> = {
   "green-cardamom": "/products/cardamom2.png",
   "black-pepper": "/products/black_pepper2.png",
   "nutmeg": "/products/nutmeg2.png",
   "bay-leaf": "/products/bay_leaf100.png",
-  "bay-leaf-200g": "/products/bay_leaf200.png",
   "cinnamon": "/products/cinnamon2.png",
   "star-anise": "/products/star_anise2.png",
   "mace": "/products/mace2.png",

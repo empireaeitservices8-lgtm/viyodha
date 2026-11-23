@@ -34,8 +34,8 @@ export default function AdminPage() {
   // Form fields for Add / Edit product
   const [pName, setPName] = useState("");
   const [pSlug, setPSlug] = useState("");
-  const [pPrice, setPPrice] = useState("");
-  const [pMrp, setPMrp] = useState("");
+  const [pPrice100, setPPrice100] = useState("");
+  const [pPrice200, setPPrice200] = useState("");
   const [pCategory, setPCategory] = useState("Whole Spices");
   const [pBrand, setPBrand] = useState("Viyodha");
   const [pType, setPType] = useState("Spices");
@@ -162,18 +162,20 @@ export default function AdminPage() {
   // Handle Add Product Submit
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pName || !pPrice || !pDesc) {
-      showMsg("Please fill in name, price and description", "error");
+    if (!pName || !pPrice100 || !pDesc) {
+      showMsg("Please fill in product name, 100g price and description", "error");
       return;
     }
 
     setSubmittingProduct(true);
     try {
+      const calculatedP200 = pPrice200 ? pPrice200.trim() : String(Math.round(Number(pPrice100) * 1.9));
       const formData = new FormData();
       formData.append("name", pName.trim());
       if (pSlug) formData.append("slug", pSlug.trim());
-      formData.append("price", pPrice);
-      if (pMrp) formData.append("mrp", pMrp);
+      formData.append("price", pPrice100.trim());
+      formData.append("price100g", pPrice100.trim());
+      formData.append("price200g", calculatedP200);
       formData.append("category", pCategory.trim());
       formData.append("brand", pBrand.trim());
       formData.append("type", pType.trim());
@@ -203,8 +205,8 @@ export default function AdminPage() {
       setEditingProduct(null);
       setPName("");
       setPSlug("");
-      setPPrice("");
-      setPMrp("");
+      setPPrice100("");
+      setPPrice200("");
       setPDesc("");
       setPImageFile(null);
       setPImageUrl("");
@@ -222,8 +224,8 @@ export default function AdminPage() {
     setEditingProduct(p);
     setPName(p.name);
     setPSlug(p.slug);
-    setPPrice(String(p.price));
-    setPMrp(p.mrp ? String(p.mrp) : "");
+    setPPrice100(String(p.price100g || p.price || ""));
+    setPPrice200(String(p.price200g || Math.round(Number(p.price || 0) * 1.9)));
     setPCategory(p.category || "Whole Spices");
     setPBrand(p.brand || "Viyodha");
     setPType(p.type || "Spices");
@@ -446,8 +448,8 @@ export default function AdminPage() {
                   setEditingProduct(null);
                   setPName("");
                   setPSlug("");
-                  setPPrice("");
-                  setPMrp("");
+                  setPPrice100("");
+                  setPPrice200("");
                   setPDesc("");
                   setPImageUrl("");
                   setPImageFile(null);
@@ -487,7 +489,7 @@ export default function AdminPage() {
                             );
                           }
                         }}
-                        placeholder="e.g. Malabar Black Pepper 200g"
+                        placeholder="e.g. Green Cardamom (ഏലക്ക)"
                         className={field}
                       />
                     </label>
@@ -507,26 +509,27 @@ export default function AdminPage() {
 
                   <div className="grid gap-5 sm:grid-cols-4">
                     <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
-                      Selling Price (₹) *
+                      Price for 100g (₹) *
                       <input
                         type="number"
                         step="0.01"
                         required
-                        value={pPrice}
-                        onChange={(e) => setPPrice(e.target.value)}
-                        placeholder="495.00"
+                        value={pPrice100}
+                        onChange={(e) => setPPrice100(e.target.value)}
+                        placeholder="260.00"
                         className={field}
                       />
                     </label>
 
                     <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
-                      MRP (₹)
+                      Price for 200g (₹) *
                       <input
                         type="number"
                         step="0.01"
-                        value={pMrp}
-                        onChange={(e) => setPMrp(e.target.value)}
-                        placeholder="599.00"
+                        required
+                        value={pPrice200}
+                        onChange={(e) => setPPrice200(e.target.value)}
+                        placeholder="495.00"
                         className={field}
                       />
                     </label>
@@ -630,8 +633,7 @@ export default function AdminPage() {
                     <tr>
                       <th className="px-6 py-4">Spice Product</th>
                       <th className="px-4 py-4">Slug</th>
-                      <th className="px-4 py-4">Price</th>
-                      <th className="px-4 py-4">MRP</th>
+                      <th className="px-4 py-4">Price (100g / 200g)</th>
                       <th className="px-4 py-4">Category</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
@@ -657,9 +659,13 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4 font-mono text-xs text-[#141414]/70">{p.slug}</td>
-                        <td className="px-4 py-4 font-bold text-[#1F4D1F]">{inr(p.price)}</td>
-                        <td className="px-4 py-4 text-[#141414]/50 line-through">
-                          {p.mrp ? inr(p.mrp) : "-"}
+                        <td className="px-4 py-4">
+                          <span className="font-bold text-[#1F4D1F]">
+                            100g: {inr(p.price100g || p.price)}
+                          </span>
+                          <span className="block text-xs font-semibold text-[#141414]/70 mt-0.5">
+                            200g: {inr(p.price200g || Math.round(Number(p.price) * 1.9))}
+                          </span>
                         </td>
                         <td className="px-4 py-4">
                           <span className="rounded-full bg-[#EEF3EA] px-2.5 py-1 text-xs font-semibold text-[#1F4D1F]">
