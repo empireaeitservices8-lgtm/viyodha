@@ -39,6 +39,7 @@ const SPICES = [
   { label: "Star Anise (തക്കോലം)", slug: "star-anise" },
   { label: "Nutmeg (ജാതിക്ക)", slug: "nutmeg" },
   { label: "Cinnamon (കറുവപ്പട്ട)", slug: "cinnamon" },
+  { label: "Cassia Cinnamon (ചുരുൾ പട്ട)", slug: "cassia-cinnamon" },
   { label: "Bay Leaf (വഴനയില)", slug: "bay-leaf" },
   { label: "Mace (ജാതിപത്രി)", slug: "mace" },
   { label: "Cloves (ഗ്രാമ്പൂ)", slug: "cloves" },

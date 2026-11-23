@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { Cormorant_Garamond } from "next/font/google";
+import emailjs from "@emailjs/browser";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -126,22 +127,65 @@ function DetailsPanel() {
 /* ---------------------------------- form ---------------------------------- */
 
 function ContactForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [topic, setTopic] = useState(TOPICS[0]);
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (sending) return;
+
     const f = new FormData(e.currentTarget);
-    const name = String(f.get("name"));
-    const phone = String(f.get("phone"));
-    const email = String(f.get("email"));
-    const message = String(f.get("message"));
+    const name = String(f.get("name") || "").trim();
+    const phone = String(f.get("phone") || "").trim();
+    const email = String(f.get("email") || "").trim();
+    const message = String(f.get("message") || "").trim();
+
+    if (!name || !email || !message) {
+      toast.error("Please fill in your name, email, and message.");
+      return;
+    }
+
+    const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_t4mrv78";
+    const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_wu94zpv";
+    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "8GCqZB_UkYsDsKwXL";
+
+    setSending(true);
 
     try {
-      await api.sendContact({ name, phone, email, message });
-      setSent(true);
-      toast.success("Message sent successfully! We will get back to you shortly.");
-    } catch {
+      const res = await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          from_name: name,
+          name: name,
+          phone: phone || "Not provided",
+          from_email: email,
+          email: email,
+          reply_to: email,
+          message: message,
+          topic: topic,
+        },
+        publicKey
+      );
+
+      console.log("EmailJS response:", res);
+
+      if (res.status === 200 || res.text === "OK") {
+        setSent(true);
+        toast.success("Enquiry sent successfully! We will get back to you shortly.");
+        formRef.current?.reset();
+      } else {
+        throw new Error(res.text || "Unexpected status from EmailJS");
+      }
+    } catch (err: unknown) {
+      console.error("EmailJS send failed:", err);
+      const errObj = err as { text?: string; message?: string };
+      const reason = errObj.text || errObj.message || "Failed to send email";
+      toast.error(`Email delivery error: ${reason}`);
+
+      // Fallback: Open visitor's email client
       const subject = `${topic} from ${name}`;
       const body = [
         `Name: ${name}`,
@@ -152,8 +196,8 @@ function ContactForm() {
         `${message}`,
       ].join("\n");
       window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      setSent(true);
-      toast.success("Opening your email app to send enquiry...");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -167,7 +211,7 @@ function ContactForm() {
       </h2>
       <p className="mt-2 text-[#141414]/70">Tell us what you need and how much. We will come back with prices and samples.</p>
 
-      <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-5">
+      <form ref={formRef} onSubmit={onSubmit} className="mt-8 flex flex-col gap-5">
        
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 text-sm font-medium">
@@ -199,13 +243,17 @@ function ContactForm() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="submit"
-            className={`rounded-full px-8 py-3.5 text-sm font-medium text-white transition-opacity hover:opacity-90 ${focusRing}`}
+            disabled={sending}
+            className={`inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60 ${focusRing}`}
             style={{ backgroundColor: GREEN }}
           >
-            Send message
+            {sending && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            )}
+            {sending ? "Sending message..." : "Send message"}
           </button>
           <p role="status" aria-live="polite" className="text-sm text-[#141414]/70">
-            {sent ? "Your email app should open with the message ready to send." : ""}
+            {sent ? "Message sent successfully!" : ""}
           </p>
         </div>
       </form>
