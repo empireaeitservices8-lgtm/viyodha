@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { api, getImageUrl, CartItem } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -86,7 +87,9 @@ function CartRow({
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold leading-tight">{item.name}</h3>
+            <h3 className="text-lg font-semibold leading-tight">
+              <BilingualName name={item.name} />
+            </h3>
             <p className="mt-0.5 text-sm text-[#141414]/60">{item.pack || "100g"}</p>
           </div>
           <p className="shrink-0 text-right">

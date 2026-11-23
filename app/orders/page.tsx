@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Order } from "@/lib/api";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -265,7 +266,9 @@ export default function MyOrdersPage() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm sm:text-base text-[#141414] truncate">{item.name}</p>
+                          <p className="font-semibold text-sm sm:text-base text-[#141414] truncate">
+                            <BilingualName name={item.name} />
+                          </p>
                           <p className="text-xs text-[#141414]/60">Qty: {item.quantity} {item.pack ? `(${item.pack})` : ""}</p>
                         </div>
                         <div className="text-right font-semibold text-sm sm:text-base text-[#1F4D1F]">

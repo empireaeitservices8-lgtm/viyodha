@@ -7,6 +7,7 @@ import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS, discountOf, type Product as StaticProduct } from "@/lib/products";
 import { api, getImageUrl, getProductImagePair, Review, Product as ApiProduct } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -289,7 +290,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
           {/* info */}
           <div className="flex flex-col items-start gap-5">
             <h1 className={`${serif.className} text-4xl font-semibold leading-tight sm:text-5xl`} style={{ color: GREEN }}>
-              {product.name}
+              <BilingualName name={product.name} malayalamClassName="text-[0.62em] font-normal normal-case tracking-normal opacity-85 ml-2.5" />
             </h1>
 
             {avgRating && (
@@ -526,7 +527,9 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
                     className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
-                <span className={`${condensed.className} mt-2 text-xl font-semibold uppercase`}>{p.name}</span>
+                <span className={`${condensed.className} mt-2 text-xl font-semibold uppercase`}>
+                  <BilingualName name={p.name} />
+                </span>
                 <span className={`${condensed.className} text-lg`}>Rs. {p.price.toFixed(2)}</span>
               </Link>
             ))}

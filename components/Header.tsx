@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 /**
@@ -210,7 +211,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                             onClick={() => setProductsOpen(false)}
                             className="block px-5 py-2 text-sm hover:bg-[#1F4D1F]/10 hover:text-[#1F4D1F] focus-visible:bg-[#1F4D1F]/10 focus-visible:outline-none"
                           >
-                            {p.label}
+                            <BilingualName name={p.label} malayalamClassName="text-xs font-normal opacity-75 ml-1" />
                           </Link>
                         </li>
                       ))}
@@ -400,7 +401,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                           tabIndex={searchOpen ? 0 : -1}
                           className="flex items-center justify-between rounded-lg px-3 py-3 text-lg transition-colors hover:bg-[#1F4D1F]/10 hover:text-[#1F4D1F] focus-visible:bg-[#1F4D1F]/10 focus-visible:outline-none"
                         >
-                          {p.label}
+                          <BilingualName name={p.label} malayalamClassName="text-sm font-normal opacity-75 ml-1.5" />
                           <span aria-hidden="true" style={{ color: COLORS.green }}>&rarr;</span>
                         </Link>
                       </li>
@@ -423,7 +424,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                         tabIndex={searchOpen ? 0 : -1}
                         className="rounded-full border border-[#1F4D1F]/35 px-4 py-2 text-sm text-[#1F4D1F] transition-colors hover:border-[#1F4D1F] hover:bg-[#1F4D1F] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]"
                       >
-                        {p.label}
+                        <BilingualName name={p.label} malayalamClassName="text-xs font-normal opacity-75 ml-1" />
                       </Link>
                     ))}
                   </div>
@@ -477,7 +478,7 @@ export default function Header({ cartCount = 0, onSearch }: HeaderProps) {
                         className="text-sm"
                         onClick={() => setMenuOpen(false)}
                       >
-                        {p.label}
+                        <BilingualName name={p.label} malayalamClassName="text-xs font-normal opacity-75 ml-1" />
                       </Link>
                     </li>
                   ))}

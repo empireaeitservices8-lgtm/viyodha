@@ -7,6 +7,7 @@ import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Product, Order, User } from "@/lib/api";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -653,7 +654,9 @@ export default function AdminPage() {
                               />
                             </div>
                             <div>
-                              <p className="font-semibold text-[#141414]">{p.name}</p>
+                              <p className="font-semibold text-[#141414]">
+                                <BilingualName name={p.name} />
+                              </p>
                               <p className="text-xs text-[#141414]/50">{p.type || "Whole Spice"}</p>
                             </div>
                           </div>

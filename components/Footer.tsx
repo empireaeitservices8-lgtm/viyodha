@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BilingualName } from "@/components/BilingualName";
 
 /**
  * Footer for Viyodha
@@ -97,7 +98,9 @@ export default function Footer() {
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm lg:grid-cols-1">
             {SPICES.map((s) => (
               <li key={s.slug}>
-                <Link href={`/products/${s.slug}`} className={linkClass}>{s.label}</Link>
+                <Link href={`/products/${s.slug}`} className={linkClass}>
+                  <BilingualName name={s.label} malayalamClassName="text-xs font-normal text-white/70 ml-1" />
+                </Link>
               </li>
             ))}
           </ul>

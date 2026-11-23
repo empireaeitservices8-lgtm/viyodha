@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 /**
@@ -254,7 +255,9 @@ function VideoCard({ v }: { v: (typeof VIDEOS)[number] }) {
           <Image src={v.thumb} alt="" fill sizes="56px" className="object-contain p-1" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[#141414]">{v.name}</p>
+          <p className="truncate text-sm font-semibold text-[#141414]">
+            <BilingualName name={v.name} malayalamClassName="text-[0.75em] font-normal opacity-75 ml-1" />
+          </p>
           <p className="text-sm">
             <span className="font-semibold" style={{ color: GREEN }}>₹{v.price}</span>
           </p>
@@ -396,7 +399,7 @@ function HomeProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
         <div className="flex items-baseline justify-between gap-2">
           <h3 className={`${serif.className} text-2xl font-bold text-[#141414]`}>
             <Link href={`/products/${p.slug}`} className="hover:text-[#1F4D1F] transition-colors">
-              {p.name}
+              <BilingualName name={p.name} />
             </Link>
           </h3>
           <p className={`${condensed.className} text-2xl font-bold text-[#1F4D1F]`}>

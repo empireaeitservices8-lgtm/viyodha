@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
 import { api, getImageUrl, CartItem } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -414,7 +415,9 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{i.name}</p>
+                      <p className="truncate font-medium">
+                        <BilingualName name={i.name} />
+                      </p>
                       <p className="text-sm text-white/65">{i.pack || "100g"}</p>
                     </div>
                     <p className="shrink-0">{inr(Number(i.price) * i.quantity)}</p>

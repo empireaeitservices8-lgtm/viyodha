@@ -8,6 +8,7 @@ import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { api, getImageUrl, getProductImagePair, Product } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -140,7 +141,7 @@ function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }
             href={`/products/${p.slug}`}
             className="hover:text-[#1F4D1F] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1F4D1F]"
           >
-            {p.name}
+            <BilingualName name={p.name} />
           </Link>
         </h2>
 
