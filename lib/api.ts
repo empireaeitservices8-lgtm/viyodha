@@ -83,7 +83,7 @@ export const DEFAULT_IMAGE2_MAP: Record<string, string> = {
   "green-cardamom": "/products/cardamom2.png",
   "black-pepper": "/products/black_pepper2.png",
   "nutmeg": "/products/nutmeg2.png",
-  "bay-leaf": "/products/bay_leaf100.png",
+  "bay-leaf": "/products/bay_leaf2.png",
   "cinnamon": "/products/cinnamon2.png",
   "cassia-cinnamon": "/products/cinnamon2.png",
   "star-anise": "/products/star_anise2.png",
