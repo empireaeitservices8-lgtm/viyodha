@@ -42,10 +42,40 @@ export default function AdminPage() {
   const [pType, setPType] = useState("Spices");
   const [pStock, setPStock] = useState("100");
   const [pDesc, setPDesc] = useState("");
-  const [pImageFile, setPImageFile] = useState<File | null>(null);
-  const [pImageUrl, setPImageUrl] = useState("");
+  const [pImageFiles, setPImageFiles] = useState<File[]>([]);
+  const [pExistingImages, setPExistingImages] = useState<string[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Generate previews for newly selected image files
+  useEffect(() => {
+    if (pImageFiles.length === 0) {
+      setPreviewUrls([]);
+      return;
+    }
+    const urls = pImageFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [pImageFiles]);
+
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const chosen = Array.from(e.target.files);
+      setPImageFiles((prev) => [...prev, ...chosen]);
+    }
+    if (e.target) e.target.value = "";
+  };
+
+  const handleRemoveNewFile = (idx: number) => {
+    setPImageFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleRemoveExistingImage = (idx: number) => {
+    setPExistingImages((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   // Orders state
   const [orders, setOrders] = useState<Order[]>([]);
@@ -160,11 +190,16 @@ export default function AdminPage() {
     }
   }, [user, loadProducts, loadOrders, loadUsers]);
 
-  // Handle Add Product Submit
+  // Handle Add / Edit Product Submit
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pName || !pPrice100 || !pDesc) {
       showMsg("Please fill in product name, 100g price and description", "error");
+      return;
+    }
+
+    if (pImageFiles.length === 0 && pExistingImages.length === 0) {
+      showMsg("Please upload at least one product image.", "error");
       return;
     }
 
@@ -183,14 +218,14 @@ export default function AdminPage() {
       formData.append("stock", pStock);
       formData.append("description", pDesc.trim());
 
-      if (pImageFile) {
-        formData.append("image", pImageFile);
-      } else if (pImageUrl) {
-        formData.append("image", pImageUrl.trim());
-      } else if (editingProduct?.image) {
-        formData.append("image", editingProduct.image);
-      } else {
-        formData.append("image", "/products/cardamom.png");
+      // Append all selected image files
+      pImageFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      // When editing, send list of kept existing images
+      if (editingProduct) {
+        formData.append("existingImages", JSON.stringify(pExistingImages));
       }
 
       if (editingProduct) {
@@ -209,8 +244,8 @@ export default function AdminPage() {
       setPPrice100("");
       setPPrice200("");
       setPDesc("");
-      setPImageFile(null);
-      setPImageUrl("");
+      setPImageFiles([]);
+      setPExistingImages([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadProducts();
     } catch (err: unknown) {
@@ -232,8 +267,12 @@ export default function AdminPage() {
     setPType(p.type || "Spices");
     setPStock(p.stock ? String(p.stock) : "100");
     setPDesc(p.description || "");
-    setPImageUrl(p.image || "");
-    setPImageFile(null);
+
+    const existing = (p.images && p.images.length > 0)
+      ? p.images
+      : (p.image2 ? [p.image, p.image2] : (p.image ? [p.image] : []));
+    setPExistingImages(existing);
+    setPImageFiles([]);
     setShowAddProduct(true);
     window.scrollTo({ top: 300, behavior: "smooth" });
   };
@@ -452,8 +491,9 @@ export default function AdminPage() {
                   setPPrice100("");
                   setPPrice200("");
                   setPDesc("");
-                  setPImageUrl("");
-                  setPImageFile(null);
+                  setPImageFiles([]);
+                  setPExistingImages([]);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                   setShowAddProduct((o) => !o);
                 }}
                 className="rounded-full px-6 py-2.5 text-xs font-bold uppercase text-white shadow-sm transition-opacity hover:opacity-90"
@@ -558,30 +598,146 @@ export default function AdminPage() {
                     </label>
                   </div>
 
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
-                      Upload Image File (via Multer)
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) setPImageFile(e.target.files[0]);
-                        }}
-                        className="file:mr-4 file:rounded-full file:border-0 file:bg-[#1F4D1F] file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:opacity-90"
-                      />
-                    </label>
+                  {/* Multi-Image Upload Section */}
+                  <div className="flex flex-col gap-3 rounded-2xl border border-[#1F4D1F]/20 bg-[#EEF3EA]/40 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-[#1F4D1F]">
+                          Product Images *
+                        </span>
+                        <span className="text-xs text-[#141414]/65">
+                          Upload 1 or more photos. The first image will be used as the primary catalog cover.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:opacity-90"
+                        style={{ backgroundColor: GREEN }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        + Upload Images
+                      </button>
+                    </div>
 
-                    <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
-                      Or Image Path / URL
-                      <input
-                        type="text"
-                        value={pImageUrl}
-                        onChange={(e) => setPImageUrl(e.target.value)}
-                        placeholder="/products/cardamom.png or https://..."
-                        className={field}
-                      />
-                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFilesSelected}
+                      className="hidden"
+                    />
+
+                    {/* Display Existing Images (When Editing) */}
+                    {pExistingImages.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#1F4D1F]">
+                          Current Saved Images ({pExistingImages.length})
+                        </span>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                          {pExistingImages.map((imgUrl, idx) => (
+                            <div
+                              key={`existing-${idx}`}
+                              className="group relative flex flex-col items-center overflow-hidden rounded-xl border border-[#1F4D1F]/20 bg-white p-2 shadow-xs"
+                            >
+                              <div className="relative h-24 w-full">
+                                <Image
+                                  src={getImageUrl(imgUrl)}
+                                  alt={`Saved photo ${idx + 1}`}
+                                  fill
+                                  sizes="120px"
+                                  className="object-contain"
+                                />
+                              </div>
+                              {idx === 0 && pImageFiles.length === 0 && (
+                                <span className="mt-1 rounded-md bg-[#1F4D1F] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                  Primary Cover
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExistingImage(idx)}
+                                className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-red-600 text-white shadow-sm opacity-90 transition hover:opacity-100 hover:scale-105"
+                                title="Remove this image"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Display Newly Selected Images */}
+                    {previewUrls.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#1F4D1F]">
+                          New Images to Upload ({previewUrls.length})
+                        </span>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                          {previewUrls.map((url, idx) => (
+                            <div
+                              key={`new-${idx}`}
+                              className="group relative flex flex-col items-center overflow-hidden rounded-xl border-2 border-dashed border-[#1F4D1F]/40 bg-white p-2 shadow-xs"
+                            >
+                              <div className="relative h-24 w-full">
+                                <Image
+                                  src={url}
+                                  alt={`Upload preview ${idx + 1}`}
+                                  fill
+                                  sizes="120px"
+                                  className="object-contain"
+                                  unoptimized
+                                />
+                              </div>
+                              {idx === 0 && pExistingImages.length === 0 && (
+                                <span className="mt-1 rounded-md bg-[#1F4D1F] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                  Primary Cover
+                                </span>
+                              )}
+                              <span className="mt-1 max-w-full truncate text-[10px] text-[#141414]/70">
+                                {pImageFiles[idx]?.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNewFile(idx)}
+                                className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-red-600 text-white shadow-sm opacity-90 transition hover:opacity-100 hover:scale-105"
+                                title="Remove this file"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty placeholder */}
+                    {pExistingImages.length === 0 && previewUrls.length === 0 && (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#1F4D1F]/30 bg-white/70 p-8 text-center transition hover:border-[#1F4D1F] hover:bg-white"
+                      >
+                        <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-[#EEF3EA] text-[#1F4D1F]">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                            <circle cx="9" cy="9" r="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-semibold text-[#1F4D1F]">
+                          Click to browse product images
+                        </p>
+                        <p className="text-xs text-[#141414]/60 mt-1">
+                          You can select multiple images at once (PNG, JPG, WEBP)
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
@@ -602,6 +758,9 @@ export default function AdminPage() {
                       onClick={() => {
                         setShowAddProduct(false);
                         setEditingProduct(null);
+                        setPImageFiles([]);
+                        setPExistingImages([]);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
                       className="rounded-full border border-gray-300 px-6 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                     >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond, Barlow_Condensed } from "next/font/google";
@@ -40,16 +40,21 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
   const currentPrice = selectedPack === "200g" ? p200 : p100;
 
   const [rawImg1, rawImg2] = getProductImagePair(product);
-  const images = [getImageUrl(rawImg1), getImageUrl(rawImg2)];
+  const images: string[] = useMemo(() => {
+    if (product.images && product.images.length > 0) {
+      return product.images.map((img: string) => getImageUrl(img));
+    }
+    return [getImageUrl(rawImg1), getImageUrl(rawImg2)];
+  }, [product, rawImg1, rawImg2]);
 
-  // Automatically slide to 2nd image every 3.5 seconds
+  // Automatically cycle through images every 3.5 seconds
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || images.length <= 1) return;
     const timer = setInterval(() => {
-      setSelectedImgIdx((prev) => (prev === 0 ? 1 : 0));
+      setSelectedImgIdx((prev) => (prev + 1) % images.length);
     }, 3500);
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, images.length]);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -202,7 +207,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
                   <circle cx="9" cy="9" r="2" />
                   <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                 </svg>
-                <span>Photo {selectedImgIdx + 1} of 2</span>
+                <span>Photo {selectedImgIdx + 1} of {images.length}</span>
               </span>
 
               {/* Sliding track */}
@@ -210,81 +215,82 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
                 className="flex h-full w-full transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${selectedImgIdx * 100}%)` }}
               >
-                <div className="relative h-full w-full shrink-0">
-                  <Image
-                    src={images[0]}
-                    alt={product.name}
-                    fill
-                    priority
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    className="object-contain p-6 sm:p-10"
-                  />
-                </div>
-                <div className="relative h-full w-full shrink-0">
-                  <Image
-                    src={images[1]}
-                    alt={`${product.name} alternate view`}
-                    fill
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    className="object-contain p-6 sm:p-10"
-                  />
-                </div>
+                {images.map((img, idx) => (
+                  <div key={idx} className="relative h-full w-full shrink-0">
+                    <Image
+                      src={img}
+                      alt={`${product.name} photo ${idx + 1}`}
+                      fill
+                      priority={idx === 0}
+                      sizes="(min-width: 768px) 50vw, 100vw"
+                      className="object-contain p-6 sm:p-10"
+                    />
+                  </div>
+                ))}
               </div>
 
               {/* Prev / Next buttons */}
-              <div className="absolute inset-y-0 inset-x-3 flex items-center justify-between pointer-events-none">
-                <button
-                  type="button"
-                  aria-label="Previous photo"
-                  onClick={() => setSelectedImgIdx((i) => (i === 0 ? 1 : 0))}
-                  className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next photo"
-                  onClick={() => setSelectedImgIdx((i) => (i === 0 ? 1 : 0))}
-                  className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              </div>
+              {images.length > 1 && (
+                <div className="absolute inset-y-0 inset-x-3 flex items-center justify-between pointer-events-none">
+                  <button
+                    type="button"
+                    aria-label="Previous photo"
+                    onClick={() => setSelectedImgIdx((i) => (i === 0 ? images.length - 1 : i - 1))}
+                    className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next photo"
+                    onClick={() => setSelectedImgIdx((i) => (i === images.length - 1 ? 0 : i + 1))}
+                    className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[#1F4D1F] shadow-md transition hover:bg-[#1F4D1F] hover:text-white"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Thumbnail Selector Strip without outer white background */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setSelectedImgIdx(idx)}
-                  className={`group relative flex items-center gap-3 rounded-2xl border-2 p-2.5 transition-all text-left ${
-                    selectedImgIdx === idx
-                      ? "border-[#1F4D1F] bg-[#1F4D1F]/5 shadow-sm ring-2 ring-[#1F4D1F]/20"
-                      : "border-[#1F4D1F]/15 bg-transparent hover:border-[#1F4D1F]/40 hover:bg-[#1F4D1F]/5"
-                  }`}
-                >
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-transparent">
-                    <Image
-                      src={img}
-                      alt={`${product.name} thumbnail ${idx + 1}`}
-                      fill
-                      sizes="56px"
-                      className="object-contain p-1"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#1F4D1F]">
-                      {idx === 0 ? "Product View" : "Spice & Farm View"}
-                    </p>
-                    <p className="text-sm font-medium text-[#141414]">
-                      Image {idx + 1} of 2
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {/* Thumbnail Selector Strip */}
+            {images.length > 1 && (
+              <div className={`grid gap-3 sm:gap-4 ${
+                images.length === 2 ? "grid-cols-2" :
+                images.length === 3 ? "grid-cols-3" :
+                "grid-cols-2 sm:grid-cols-4 md:grid-cols-6"
+              }`}>
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedImgIdx(idx)}
+                    className={`group relative flex items-center gap-3 rounded-2xl border-2 p-2.5 transition-all text-left ${
+                      selectedImgIdx === idx
+                        ? "border-[#1F4D1F] bg-[#1F4D1F]/5 shadow-sm ring-2 ring-[#1F4D1F]/20"
+                        : "border-[#1F4D1F]/15 bg-transparent hover:border-[#1F4D1F]/40 hover:bg-[#1F4D1F]/5"
+                    }`}
+                  >
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-transparent">
+                      <Image
+                        src={img}
+                        alt={`${product.name} thumbnail ${idx + 1}`}
+                        fill
+                        sizes="56px"
+                        className="object-contain p-1"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[#1F4D1F]">
+                        {idx === 0 ? "Cover View" : `View ${idx + 1}`}
+                      </p>
+                      <p className="text-sm font-medium text-[#141414]">
+                        Image {idx + 1} of {images.length}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* info */}
