@@ -215,7 +215,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
                 className="flex h-full w-full transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${selectedImgIdx * 100}%)` }}
               >
-                {images.map((img, idx) => (
+                {images.map((img: string, idx: number) => (
                   <div key={idx} className="relative h-full w-full shrink-0">
                     <Image
                       src={img}
@@ -259,7 +259,7 @@ export default function ProductDetails({ product: initialProduct }: ProductDetai
                 images.length === 3 ? "grid-cols-3" :
                 "grid-cols-2 sm:grid-cols-4 md:grid-cols-6"
               }`}>
-                {images.map((img, idx) => (
+                {images.map((img: string, idx: number) => (
                   <button
                     key={idx}
                     type="button"
