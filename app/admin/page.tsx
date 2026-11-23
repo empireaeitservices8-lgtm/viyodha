@@ -7,7 +7,7 @@ import { Cormorant_Garamond } from "next/font/google";
 import { useAuth } from "@/context/AuthContext";
 import { api, getImageUrl, Product, Order, User } from "@/lib/api";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
-import { BilingualName } from "@/components/BilingualName";
+import { BilingualName, parseBilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
 
 const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"] });
@@ -34,6 +34,7 @@ export default function AdminPage() {
 
   // Form fields for Add / Edit product
   const [pName, setPName] = useState("");
+  const [pMalayalam, setPMalayalam] = useState("");
   const [pSlug, setPSlug] = useState("");
   const [pPrice100, setPPrice100] = useState("");
   const [pPrice200, setPPrice200] = useState("");
@@ -206,8 +207,12 @@ export default function AdminPage() {
     setSubmittingProduct(true);
     try {
       const calculatedP200 = pPrice200 ? pPrice200.trim() : String(Math.round(Number(pPrice100) * 1.9));
+      const finalName = pMalayalam.trim()
+        ? (pName.includes("(") ? pName.trim() : `${pName.trim()} (${pMalayalam.trim()})`)
+        : pName.trim();
+
       const formData = new FormData();
-      formData.append("name", pName.trim());
+      formData.append("name", finalName);
       if (pSlug) formData.append("slug", pSlug.trim());
       formData.append("price", pPrice100.trim());
       formData.append("price100g", pPrice100.trim());
@@ -230,16 +235,17 @@ export default function AdminPage() {
 
       if (editingProduct) {
         await api.updateProduct(editingProduct.id, formData, token || undefined);
-        showMsg(`Product "${pName}" updated successfully!`);
+        showMsg(`Product "${finalName}" updated successfully!`);
       } else {
         await api.addProduct(formData, token || undefined);
-        showMsg(`New product "${pName}" added successfully!`);
+        showMsg(`New product "${finalName}" added successfully!`);
       }
 
       // Reset form
       setShowAddProduct(false);
       setEditingProduct(null);
       setPName("");
+      setPMalayalam("");
       setPSlug("");
       setPPrice100("");
       setPPrice200("");
@@ -258,7 +264,9 @@ export default function AdminPage() {
 
   const handleEditClick = (p: Product) => {
     setEditingProduct(p);
-    setPName(p.name);
+    const { english, malayalam } = parseBilingualName(p.name);
+    setPName(english || p.name);
+    setPMalayalam(malayalam);
     setPSlug(p.slug);
     setPPrice100(String(p.price100g || p.price || ""));
     setPPrice200(String(p.price200g || Math.round(Number(p.price || 0) * 1.9)));
@@ -487,6 +495,7 @@ export default function AdminPage() {
                 onClick={() => {
                   setEditingProduct(null);
                   setPName("");
+                  setPMalayalam("");
                   setPSlug("");
                   setPPrice100("");
                   setPPrice200("");
@@ -511,9 +520,9 @@ export default function AdminPage() {
                 </h3>
 
                 <form onSubmit={handleSaveProduct} className="flex flex-col gap-5">
-                  <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="grid gap-5 sm:grid-cols-3">
                     <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
-                      Product Name *
+                      Product Name (English) *
                       <input
                         type="text"
                         required
@@ -530,7 +539,18 @@ export default function AdminPage() {
                             );
                           }
                         }}
-                        placeholder="e.g. Green Cardamom (ഏലക്ക)"
+                        placeholder="e.g. Green Cardamom"
+                        className={field}
+                      />
+                    </label>
+
+                    <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
+                      Malayalam Name (മലയാളം പേര്)
+                      <input
+                        type="text"
+                        value={pMalayalam}
+                        onChange={(e) => setPMalayalam(e.target.value)}
+                        placeholder="e.g. ഏലക്ക"
                         className={field}
                       />
                     </label>
@@ -542,11 +562,27 @@ export default function AdminPage() {
                         required
                         value={pSlug}
                         onChange={(e) => setPSlug(e.target.value)}
-                        placeholder="e.g. malabar-black-pepper"
+                        placeholder="e.g. green-cardamom"
                         className={field}
                       />
                     </label>
                   </div>
+
+                  {/* Live Bilingual Preview */}
+                  {(pName || pMalayalam) && (
+                    <div className="flex items-center gap-2 rounded-xl bg-[#EEF3EA]/70 px-4 py-2.5 text-xs text-[#1F4D1F]">
+                      <span className="font-bold">Display Preview:</span>
+                      <span className="font-semibold text-sm">
+                        <BilingualName
+                          name={
+                            pMalayalam.trim()
+                              ? (pName.includes("(") ? pName.trim() : `${pName.trim()} (${pMalayalam.trim()})`)
+                              : pName.trim()
+                          }
+                        />
+                      </span>
+                    </div>
+                  )}
 
                   <div className="grid gap-5 sm:grid-cols-4">
                     <label className="flex flex-col gap-1 text-xs font-semibold text-[#141414]/75">
@@ -758,6 +794,7 @@ export default function AdminPage() {
                       onClick={() => {
                         setShowAddProduct(false);
                         setEditingProduct(null);
+                        setPMalayalam("");
                         setPImageFiles([]);
                         setPExistingImages([]);
                         if (fileInputRef.current) fileInputRef.current.value = "";
