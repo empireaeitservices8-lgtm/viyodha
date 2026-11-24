@@ -33,6 +33,64 @@ const MAP_SRC =
   "https://maps.google.com/maps?q=Gandhima+Nagar,+Peelamedu,+Coimbatore+641004&output=embed";
 
 const TOPICS = ["Wholesale order", "Export enquiry", "Private label", "Something else"];
+const TERMS_UPDATED = "24 November 2026";
+
+const TERMS = [
+  {
+    title: "Orders & acceptance",
+    body: [
+      "All orders placed on our website or by phone, WhatsApp or email are subject to acceptance and stock availability.",
+      "We may decline or cancel an order if an item is unavailable, a price is listed incorrectly, or we cannot verify the order details.",
+    ],
+  },
+  {
+    title: "Pricing & payment",
+    body: [
+      "All prices are in Indian Rupees (₹) and include applicable taxes unless stated otherwise.",
+      "Prices may change without notice, but the price confirmed at the time of your order will not change afterwards.",
+    ],
+  },
+  {
+    title: "Shipping & delivery",
+    body: [
+      "We usually dispatch orders within 2 to 4 working days. Delivery time depends on your location and the courier.",
+      "Delivery dates are estimates. We are not liable for delays caused by couriers, weather or other events outside our control.",
+      "Please check your parcel on delivery and tell us about any visible damage right away.",
+    ],
+  },
+  {
+    title: "Returns & refunds",
+    body: [
+      "Because spices are food products, we cannot accept returns of opened or used items.",
+      "If your order arrives damaged, incorrect or sealed-pack defective, contact us within 48 hours of delivery with photos, and we will replace it or refund you.",
+      "Approved refunds are returned to the original payment method within 7 to 10 working days.",
+    ],
+  },
+  {
+    title: "Product quality & natural variation",
+    body: [
+      "Our spices are natural agricultural products. Colour, size and aroma can differ slightly between harvests and batches.",
+      "Product photos are for illustration. Packaging and labels may change without affecting the quality of the product.",
+      "Store spices in a cool, dry place in an airtight container for the best flavour.",
+    ],
+  },
+ 
+  {
+    title: "Privacy & your data",
+    body: [
+      "We collect only the details needed to process your order and answer your enquiry, such as your name, phone, email and address.",
+      "We do not sell your personal data. We share it only with delivery and payment partners who need it to complete your order.",
+    ],
+  },
+  {
+    title: "Liability",
+    body: [
+      "Viyodha Trading Private Limited is not liable for indirect or consequential losses arising from the use of our products or website.",
+      "Our total liability for any claim is limited to the value of the order concerned.",
+    ],
+  },
+ 
+];
 
 /* --------------------------------- icons ---------------------------------- */
 
@@ -260,7 +318,114 @@ function ContactForm() {
     </div>
   );
 }
+/* ------------------------------ terms & conditions ------------------------ */
 
+function TermsSection() {
+  return (
+    <section
+      id="terms"
+      className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-24 sm:px-6 lg:px-8"
+      aria-labelledby="terms-heading"
+    >
+      <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-8">
+        {/* intro panel */}
+        <div
+          className="relative overflow-hidden rounded-[2rem] rounded-tl-[4.5rem] p-8 pt-14 text-white sm:p-12 sm:pt-16 lg:sticky lg:top-24 lg:self-start lg:rounded-tl-[6rem]"
+          style={{ backgroundColor: GREEN }}
+        >
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-white/60">Legal</p>
+          <h2
+            id="terms-heading"
+            className={`${serif.className} mt-3 text-4xl font-semibold leading-[1.02] sm:text-5xl lg:text-6xl`}
+          >
+            Terms &amp; Conditions
+          </h2>
+          <p className="mt-5 max-w-sm text-white/80">
+            Clear, fair terms for everyone who buys from {COMPANY}, whether it is one jar or one container.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-white/12 px-4 py-1.5 text-sm text-white/90">
+              Last updated: {TERMS_UPDATED}
+            </span>
+          </div>
+
+          <div className="mt-10 border-t border-white/20 pt-6">
+            <p className="text-sm text-white/70">Questions about these terms?</p>
+            <a
+              href={`mailto:${EMAIL}`}
+              className="mt-1 inline-block break-all rounded-sm text-lg underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {EMAIL}
+            </a>
+          </div>
+
+          {/* decorative ring */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full border-[28px] border-white/5"
+          />
+        </div>
+
+        {/* accordion */}
+        <div className="flex flex-col gap-3">
+          {TERMS.map((t, n) => (
+            <details
+              key={t.title}
+              open={n === 0}
+              className="group overflow-hidden rounded-2xl border border-[#1F4D1F]/15 bg-white transition-shadow open:shadow-lg open:[&>summary]:bg-[#EEF3EA]"
+            >
+              <summary
+                className={`flex cursor-pointer list-none items-center gap-4 px-5 py-4 transition-colors hover:bg-[#EEF3EA] sm:px-6 [&::-webkit-details-marker]:hidden ${focusRing}`}
+              >
+                <span
+                  className={`${serif.className} grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg font-bold text-white`}
+                  style={{ backgroundColor: GREEN }}
+                >
+                  {String(n + 1).padStart(2, "0")}
+                </span>
+                <span className={`${serif.className} flex-1 text-xl font-semibold sm:text-2xl`} style={{ color: GREEN }}>
+                  {t.title}
+                </span>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0 text-[#1F4D1F] transition-transform duration-300 group-open:rotate-180"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+
+              <ul className="flex flex-col gap-3 px-5 pb-6 pt-3 sm:pl-[5.25rem] sm:pr-8">
+                {t.body.map((line) => (
+                  <li key={line} className="flex gap-3 text-[#141414]/75">
+                    <span
+                      aria-hidden="true"
+                      className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: GREEN }}
+                    />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+
+          <p className="mt-3 rounded-2xl px-5 py-4 text-sm text-[#141414]/70" style={{ backgroundColor: TINT }}>
+            By placing an order or sending an enquiry, you confirm that you have read and agree to these terms.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 /* ---------------------------------- page ---------------------------------- */
 
 export default function ContactPage() {
@@ -321,6 +486,7 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+      <TermsSection/>
     </main>
   );
 }

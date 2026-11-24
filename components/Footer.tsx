@@ -31,6 +31,8 @@ const EXPLORE = [
   { label: "Contact", href: "/contact" },
   { label: "Login", href: "/login" },
   { label: "Register", href: "/register" },
+    { label: "Terms and Conditions", href: "/contact#terms" },
+
 ];
 
 const SPICES = [

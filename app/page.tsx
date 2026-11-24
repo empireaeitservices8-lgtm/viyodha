@@ -30,20 +30,20 @@ const RED = "#C8221E";
 
 const SLIDES = [
   {
-    img: "/hero/hero1.jpg",
-    fit: "contain" as const,
+    video: "/videos/hero11.mp4",
+    poster: "/hero/hero1.jpg",
     title: "Whole spices, picked at their peak",
     text: "Cardamom, cloves, star anise and pepper, graded by hand and sealed fresh for your kitchen.",
   },
   {
-    img: "/hero/hero2.jpg",
-    fit: "contain" as const,
+    video: "/videos/hero2.mp4",
+    poster: "/hero/hero2.jpg",
     title: "Nutmeg, mace and cinnamon, the warm ones",
     text: "Slow-dried and packed whole, so every grate and every stick smells like the first day.",
   },
   {
-    img: "/hero/hero3.jpg",
-    fit: "contain" as const,
+    video: "/videos/hero3.mp4",
+    poster: "/hero/hero3.jpg",
     title: "Bay leaf that still tastes of the tree",
     text: "Dried gently, never rushed, so the leaf keeps its colour and its aroma.",
   },
@@ -136,77 +136,142 @@ const roundBtn =
 
 function HeroCarousel() {
   const [i, setI] = useState(0);
+  const [reduced, setReduced] = useState(false);
+  const [ratios, setRatios] = useState<number[]>([]); // width / height of each video
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const go = (n: number) => setI((n + SLIDES.length) % SLIDES.length);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setTimeout(() => {
-      setI((n) => (n + 1) % SLIDES.length);
-  }, 4000);
-  return () => clearTimeout(t);
-  }, [i]);
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
-return (
-  <section
-    className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
-    aria-roledescription="carousel"
-    aria-label="Featured spices"
-  >
-    <div className="relative overflow-hidden rounded-[2rem]" style={{ backgroundColor: TINT }}>
-      <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${i * 100}%)` }}>
+  // Play only the active video, pause the rest
+  useEffect(() => {
+    videoRefs.current.forEach((el, n) => {
+      if (!el) return;
+      if (n === i && !reduced) {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      } else {
+        el.pause();
+      }
+    });
+  }, [i, reduced]);
+
+  // Auto-advance
+  useEffect(() => {
+    if (reduced) return;
+    const t = setTimeout(() => setI((n) => (n + 1) % SLIDES.length), 7000);
+    return () => clearTimeout(t);
+  }, [i, reduced]);
+
+  const saveRatio = (n: number, el: HTMLVideoElement) => {
+    if (!el.videoWidth || !el.videoHeight) return;
+    setRatios((prev) => {
+      const next = [...prev];
+      next[n] = el.videoWidth / el.videoHeight;
+      return next;
+    });
+  };
+
+  return (
+    <section
+      className="w-full bg-[#1F4D1F]"
+      aria-roledescription="carousel"
+      aria-label="Featured spices"
+    >
+      {/* Stage takes the active video's own ratio: full width, nothing cropped, no bars */}
+      <div
+        className="relative w-full overflow-hidden bg-black"
+        style={{ aspectRatio: ratios[i] ?? 16 / 9 }}
+      >
         {SLIDES.map((s, n) => (
-          <div key={s.img} className="grid w-full shrink-0 md:h-[540px] md:grid-cols-2" aria-hidden={n !== i}>
-            <div className="order-2 flex flex-col justify-center gap-5 p-8 pb-16 sm:p-12 md:order-1 md:pb-12">
-              <h1 className={`${serif.className} text-4xl font-semibold leading-[1.05] sm:text-5xl lg:text-6xl`} style={{ color: GREEN }}>
-                {s.title}
-              </h1>
-              <p className="max-w-md text-lg text-[#141414]/75">{s.text}</p>
-              <div>
-                <Link
-                  href="/products"
-                  tabIndex={n === i ? 0 : -1}
-                  className="inline-block rounded-full px-7 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4D1F]"
-                  style={{ backgroundColor: GREEN }}
-                >
-                  Shop spices
-                </Link>
+          <div
+            key={s.video}
+            aria-hidden={n !== i}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              n === i ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
+            }`}
+          >
+            <video
+              ref={(el) => {
+                videoRefs.current[n] = el;
+              }}
+              src={s.video}
+              poster={s.poster}
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onLoadedMetadata={(e) => saveRatio(n, e.currentTarget)}
+              className="absolute inset-0 h-full w-full object-cover"
+              aria-hidden="true"
+            />
+
+            {/* Desktop only: overlay + text on top of the video */}
+            <div className="absolute inset-0 hidden bg-gradient-to-r from-black/65 via-black/30 to-transparent md:block" />
+            <div className="relative z-10 mx-auto hidden h-full max-w-7xl flex-col justify-center px-4 pb-12 sm:px-6 md:flex lg:px-8">
+              <div className="flex max-w-xl flex-col gap-4 lg:gap-5">
+                <h1 className={`${serif.className} text-4xl font-semibold leading-[1.05] text-white lg:text-6xl`}>
+                  {s.title}
+                </h1>
+                <p className="max-w-md text-base text-white/85 lg:text-lg">{s.text}</p>
+                <div>
+                  <Link
+                    href="/products"
+                    tabIndex={n === i ? 0 : -1}
+                    className="inline-block rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#1F4D1F] transition-colors hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    Shop spices
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div className="order-1 m-4 flex items-center justify-center overflow-hidden rounded-3xl bg-white md:order-2">
-              <Image
-                src={s.img}
-                alt=""
-                width={0}
-                height={0}
-                priority={n === 0}
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="h-auto w-full object-contain md:max-h-[508px]"
-              />
             </div>
           </div>
         ))}
+
+        {/* controls */}
+        <div className="absolute inset-x-0 bottom-3 z-20 md:bottom-6">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2">
+              {SLIDES.map((_, n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-label={`Go to slide ${n + 1}`}
+                  aria-current={n === i}
+                  onClick={() => go(n)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    n === i ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="hidden gap-2 md:flex">
+              <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)} className={roundBtn}>
+                <Arrow dir="l" />
+              </button>
+              <button type="button" aria-label="Next slide" onClick={() => go(i + 1)} className={roundBtn}>
+                <Arrow dir="r" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* controls */}
-      <div className="absolute bottom-5 left-8 flex items-center gap-2 sm:left-12">
-        {SLIDES.map((_, n) => (
-          <button
-            key={n}
-            type="button"
-            aria-label={`Go to slide ${n + 1}`}
-            aria-current={n === i}
-            onClick={() => go(n)}
-            className={`h-2.5 rounded-full transition-all ${n === i ? "w-8 bg-[#1F4D1F]" : "w-2.5 bg-[#1F4D1F]/30"}`}
-          />
-        ))}
+      {/* Mobile only: text below the video */}
+      <div className="px-4 py-8 text-white sm:px-6 md:hidden" aria-live="polite">
+        <h1 className={`${serif.className} text-3xl font-semibold leading-[1.1]`}>{SLIDES[i].title}</h1>
+        <p className="mt-3 text-base text-white/85">{SLIDES[i].text}</p>
+        <Link
+          href="/products"
+          className="mt-5 inline-block rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#1F4D1F]"
+        >
+          Shop spices
+        </Link>
       </div>
-      <div className="absolute bottom-4 right-6 hidden gap-2 md:flex">
-        <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)} className={roundBtn}><Arrow dir="l" /></button>
-        <button type="button" aria-label="Next slide" onClick={() => go(i + 1)} className={roundBtn}><Arrow dir="r" /></button>
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  );
 }
 
 /* ------------------------------ 2. video row ------------------------------- */
