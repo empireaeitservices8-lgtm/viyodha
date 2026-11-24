@@ -137,7 +137,6 @@ const roundBtn =
 function HeroCarousel() {
   const [i, setI] = useState(0);
   const [reduced, setReduced] = useState(false);
-  const [ratios, setRatios] = useState<number[]>([]); // width / height of each video
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const go = (n: number) => setI((n + SLIDES.length) % SLIDES.length);
 
@@ -165,26 +164,14 @@ function HeroCarousel() {
     return () => clearTimeout(t);
   }, [i, reduced]);
 
-  const saveRatio = (n: number, el: HTMLVideoElement) => {
-    if (!el.videoWidth || !el.videoHeight) return;
-    setRatios((prev) => {
-      const next = [...prev];
-      next[n] = el.videoWidth / el.videoHeight;
-      return next;
-    });
-  };
-
   return (
     <section
       className="w-full bg-[#1F4D1F]"
       aria-roledescription="carousel"
       aria-label="Featured spices"
     >
-      {/* Stage takes the active video's own ratio: full width, nothing cropped, no bars */}
-      <div
-        className="relative w-full overflow-hidden bg-black"
-        style={{ aspectRatio: ratios[i] ?? 16 / 9 }}
-      >
+      {/* Fixed uniform height across all slides on mobile, tablet & desktop */}
+      <div className="relative h-[560px] w-full overflow-hidden bg-black sm:h-[620px] md:h-[680px] lg:h-[720px]">
         {SLIDES.map((s, n) => (
           <div
             key={s.video}
@@ -203,24 +190,27 @@ function HeroCarousel() {
               loop
               playsInline
               preload="auto"
-              onLoadedMetadata={(e) => saveRatio(n, e.currentTarget)}
               className="absolute inset-0 h-full w-full object-cover"
               aria-hidden="true"
             />
 
-            {/* Desktop only: overlay + text on top of the video */}
-            <div className="absolute inset-0 hidden bg-gradient-to-r from-black/65 via-black/30 to-transparent md:block" />
-            <div className="relative z-10 mx-auto hidden h-full max-w-7xl flex-col justify-center px-4 pb-12 sm:px-6 md:flex lg:px-8">
-              <div className="flex max-w-xl flex-col gap-4 lg:gap-5">
-                <h1 className={`${serif.className} text-4xl font-semibold leading-[1.05] text-white lg:text-6xl`}>
+            {/* Gradient overlay on mobile (bottom-up) & desktop (left-to-right) for clear text contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20 md:bg-gradient-to-r md:from-black/80 md:via-black/45 md:to-transparent" />
+
+            {/* Overlay text on top of the video across both mobile & desktop */}
+            <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-16 sm:px-8 md:justify-center md:pb-8 lg:px-8">
+              <div className="flex max-w-xl flex-col gap-3 sm:gap-4 lg:gap-5">
+                <h1 className={`${serif.className} text-3xl font-semibold leading-[1.08] text-white sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-md`}>
                   {s.title}
                 </h1>
-                <p className="max-w-md text-base text-white/85 lg:text-lg">{s.text}</p>
-                <div>
+                <p className="max-w-md text-sm text-white/90 sm:text-base lg:text-lg drop-shadow-sm">
+                  {s.text}
+                </p>
+                <div className="pt-1">
                   <Link
                     href="/products"
                     tabIndex={n === i ? 0 : -1}
-                    className="inline-block rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#1F4D1F] transition-colors hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    className="inline-block rounded-full bg-white px-6 py-2.5 text-xs font-bold text-[#1F4D1F] shadow-md transition-colors hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-7 sm:py-3 sm:text-sm"
                   >
                     Shop spices
                   </Link>
@@ -232,7 +222,7 @@ function HeroCarousel() {
 
         {/* controls */}
         <div className="absolute inset-x-0 bottom-3 z-20 md:bottom-6">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-8">
             <div className="flex items-center gap-2">
               {SLIDES.map((_, n) => (
                 <button
@@ -257,18 +247,6 @@ function HeroCarousel() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile only: text below the video */}
-      <div className="px-4 py-8 text-white sm:px-6 md:hidden" aria-live="polite">
-        <h1 className={`${serif.className} text-3xl font-semibold leading-[1.1]`}>{SLIDES[i].title}</h1>
-        <p className="mt-3 text-base text-white/85">{SLIDES[i].text}</p>
-        <Link
-          href="/products"
-          className="mt-5 inline-block rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#1F4D1F]"
-        >
-          Shop spices
-        </Link>
       </div>
     </section>
   );

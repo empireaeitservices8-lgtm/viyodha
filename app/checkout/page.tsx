@@ -26,7 +26,7 @@ const STATES = [
 ];
 
 const PAYMENTS = [
-  { id: "cod", title: "Cash on delivery", text: "Pay in cash when your fresh spices are delivered to your doorstep." },
+  { id: "cod", title: "Cash on delivery", text: "Pay in cash when your fresh spices are delivered to your doorstep.", recommended: true },
   { id: "online_upi", title: "Online Payment (UPI)", text: "Fast & instant with Google Pay, PhonePe, Paytm, or UPI ID." },
   { id: "online_card", title: "Online Payment (Credit / Debit Card)", text: "Visa, Mastercard, RuPay & international cards." },
   { id: "online_netbanking", title: "Online Payment (Net Banking)", text: "Direct transfer from SBI, HDFC, ICICI, Axis and all major Indian banks." },
@@ -188,6 +188,9 @@ export default function CheckoutPage() {
       const msg = err instanceof Error ? err.message : "Failed to place order";
       setError(msg);
       toast.error(msg);
+      if (msg.includes("Cash on delivery") || msg.includes("RAZORPAY") || msg.includes("gateway")) {
+        setPayment("cod");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -383,14 +386,41 @@ export default function CheckoutPage() {
                         >
                           {payment === p.id && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: GREEN }} />}
                         </span>
-                        <span className="min-w-0">
-                          <span className="block font-medium">{p.title}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2 font-medium">
+                            {p.title}
+                            {p.recommended && (
+                              <span className="rounded-full bg-[#1F4D1F] px-2.5 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                                Recommended
+                              </span>
+                            )}
+                          </span>
                           <span className="block text-sm text-[#141414]/65">{p.text}</span>
                         </span>
                       </div>
                     </label>
                   ))}
                 </div>
+
+                {payment !== "cod" && (
+                  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-xs">
+                    <span className="text-base shrink-0">ℹ️</span>
+                    <div className="flex-1">
+                      <p className="font-bold text-amber-950">Online payment requires Razorpay merchant keys</p>
+                      <p className="mt-1 leading-relaxed text-amber-900/90">
+                        Live online card/UPI payment processing requires Razorpay API keys configured on your backend (<code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-[11px]">RAZORPAY_KEY_ID</code>).
+                        If you have not added Razorpay keys yet, please select <strong>Cash on delivery</strong> to place and confirm your order instantly.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setPayment("cod")}
+                        className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-[#1F4D1F] px-4 py-1.5 font-bold text-white transition hover:opacity-90"
+                      >
+                        ✓ Select Cash on Delivery
+                      </button>
+                    </div>
+                  </div>
+                )}
               </fieldset>
             </Section>
           </div>
