@@ -193,18 +193,30 @@ function HeroCarousel() {
               aria-hidden="true"
             />
 
-            {/* Overlay text on top of the video across both mobile & desktop with full video clarity (no darkening overlay) */}
+            {/* Subtle soft scrim behind text to ensure text is bright, projected & high-contrast without blurring the video */}
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent md:bg-gradient-to-r md:from-black/65 md:via-black/20 md:to-transparent"
+              aria-hidden="true"
+            />
+
+            {/* Overlay text on top of the video across both mobile & desktop with bright, crisp projection */}
             <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-16 sm:px-8 md:justify-center md:pb-8 lg:px-8">
               <div className="flex max-w-xl flex-col gap-3 sm:gap-4 lg:gap-5">
                 <h1
-                  className={`${serif.className} text-3xl font-semibold leading-[1.08] text-white sm:text-4xl md:text-5xl lg:text-6xl`}
-                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85), 0 4px 24px rgba(0,0,0,0.7)" }}
+                  className={`${serif.className} text-3xl font-bold leading-[1.08] text-white tracking-wide sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-2xl`}
+                  style={{
+                    textShadow:
+                      "0 1px 3px #000, 0 2px 8px rgba(0,0,0,0.95), 0 4px 20px rgba(0,0,0,0.9), 0 8px 36px rgba(0,0,0,0.85)",
+                  }}
                 >
                   {s.title}
                 </h1>
                 <p
-                  className="max-w-md text-sm text-white sm:text-base lg:text-lg font-medium"
-                  style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 2px 16px rgba(0,0,0,0.7)" }}
+                  className="max-w-md text-sm font-semibold text-white sm:text-base lg:text-lg drop-shadow-lg"
+                  style={{
+                    textShadow:
+                      "0 1px 2px #000, 0 2px 6px rgba(0,0,0,0.95), 0 4px 16px rgba(0,0,0,0.9)",
+                  }}
                 >
                   {s.text}
                 </p>
@@ -212,7 +224,7 @@ function HeroCarousel() {
                   <Link
                     href="/products"
                     tabIndex={n === i ? 0 : -1}
-                    className="inline-block rounded-full bg-white px-6 py-2.5 text-xs font-bold text-[#1F4D1F] shadow-lg transition-transform hover:scale-105 hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-7 sm:py-3 sm:text-sm"
+                    className="inline-block rounded-full bg-white px-6 py-2.5 text-xs font-bold text-[#1F4D1F] shadow-xl transition-transform hover:scale-105 hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-7 sm:py-3 sm:text-sm"
                   >
                     Shop spices
                   </Link>
