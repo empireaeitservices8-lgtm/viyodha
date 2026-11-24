@@ -30,7 +30,7 @@ const RED = "#C8221E";
 
 const SLIDES = [
   {
-    video: "/videos/hero11.mp4",
+    video: "/videos/hero1_new.mp4",
     poster: "/hero/hero1.jpg",
     title: "Whole spices, picked at their peak",
     text: "Cardamom, cloves, star anise and pepper, graded by hand and sealed fresh for your kitchen.",
@@ -150,7 +150,7 @@ function HeroCarousel() {
       if (!el) return;
       if (n === i && !reduced) {
         el.currentTime = 0;
-        el.play().catch(() => {});
+        el.play().catch(() => { });
       } else {
         el.pause();
       }
@@ -176,9 +176,8 @@ function HeroCarousel() {
           <div
             key={s.video}
             aria-hidden={n !== i}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              n === i ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${n === i ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
+              }`}
           >
             <video
               ref={(el) => {
@@ -194,23 +193,26 @@ function HeroCarousel() {
               aria-hidden="true"
             />
 
-            {/* Gradient overlay on mobile (bottom-up) & desktop (left-to-right) for clear text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20 md:bg-gradient-to-r md:from-black/80 md:via-black/45 md:to-transparent" />
-
-            {/* Overlay text on top of the video across both mobile & desktop */}
+            {/* Overlay text on top of the video across both mobile & desktop with full video clarity (no darkening overlay) */}
             <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-16 sm:px-8 md:justify-center md:pb-8 lg:px-8">
               <div className="flex max-w-xl flex-col gap-3 sm:gap-4 lg:gap-5">
-                <h1 className={`${serif.className} text-3xl font-semibold leading-[1.08] text-white sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-md`}>
+                <h1
+                  className={`${serif.className} text-3xl font-semibold leading-[1.08] text-white sm:text-4xl md:text-5xl lg:text-6xl`}
+                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85), 0 4px 24px rgba(0,0,0,0.7)" }}
+                >
                   {s.title}
                 </h1>
-                <p className="max-w-md text-sm text-white/90 sm:text-base lg:text-lg drop-shadow-sm">
+                <p
+                  className="max-w-md text-sm text-white sm:text-base lg:text-lg font-medium"
+                  style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 2px 16px rgba(0,0,0,0.7)" }}
+                >
                   {s.text}
                 </p>
                 <div className="pt-1">
                   <Link
                     href="/products"
                     tabIndex={n === i ? 0 : -1}
-                    className="inline-block rounded-full bg-white px-6 py-2.5 text-xs font-bold text-[#1F4D1F] shadow-md transition-colors hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-7 sm:py-3 sm:text-sm"
+                    className="inline-block rounded-full bg-white px-6 py-2.5 text-xs font-bold text-[#1F4D1F] shadow-lg transition-transform hover:scale-105 hover:bg-[#EEF3EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-7 sm:py-3 sm:text-sm"
                   >
                     Shop spices
                   </Link>
@@ -231,9 +233,8 @@ function HeroCarousel() {
                   aria-label={`Go to slide ${n + 1}`}
                   aria-current={n === i}
                   onClick={() => go(n)}
-                  className={`h-2.5 rounded-full transition-all ${
-                    n === i ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"
-                  }`}
+                  className={`h-2.5 rounded-full transition-all ${n === i ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"
+                    }`}
                 />
               ))}
             </div>
@@ -455,22 +456,20 @@ function HomeProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
           <button
             type="button"
             onClick={() => setSelectedPack("100g")}
-            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
-              selectedPack === "100g"
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${selectedPack === "100g"
                 ? "bg-[#1F4D1F] text-white shadow-sm"
                 : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
-            }`}
+              }`}
           >
             100g &middot; ₹{p100}
           </button>
           <button
             type="button"
             onClick={() => setSelectedPack("200g")}
-            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
-              selectedPack === "200g"
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${selectedPack === "200g"
                 ? "bg-[#1F4D1F] text-white shadow-sm"
                 : "border border-[#1F4D1F]/30 bg-white text-[#1F4D1F] hover:bg-[#EEF3EA]"
-            }`}
+              }`}
           >
             200g &middot; ₹{p200}
           </button>
