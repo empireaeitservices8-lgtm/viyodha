@@ -56,7 +56,7 @@ export default function RegisterPage() {
     <AuthShell
       heading="Join Viyodha"
       intro="Create an account to order whole spices for your kitchen, shop or business."
-      perks={["Faster checkout every time", "Order history and tracking", "Wholesale and export enquiries"]}
+      perks={["Faster checkout every time", "Order history and tracking"]}
       formTitle="Create your account"
       footer={
         <>
