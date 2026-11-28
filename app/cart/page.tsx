@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
-import { api, getImageUrl, CartItem } from "@/lib/api";
+import { api, getImageUrl, CartItem, DeliverySettings } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
@@ -115,9 +115,10 @@ function CartRow({
   );
 }
 
-function ShippingProgress({ subtotal }: { subtotal: number }) {
-  const left = FREE_SHIPPING_ABOVE - subtotal;
-  const pct = Math.min(100, Math.round((subtotal / FREE_SHIPPING_ABOVE) * 100));
+function ShippingProgress({ subtotal, threshold }: { subtotal: number; threshold: number }) {
+  if (threshold <= 0) return null;
+  const left = threshold - subtotal;
+  const pct = Math.min(100, Math.round((subtotal / threshold) * 100));
   return (
     <div className="rounded-2xl p-5" style={{ backgroundColor: TINT }}>
       <p className="text-sm font-medium" style={{ color: GREEN }}>
@@ -140,8 +141,17 @@ function ShippingProgress({ subtotal }: { subtotal: number }) {
   );
 }
 
-function Summary({ subtotal, savings }: { subtotal: number; savings: number }) {
-  const shipping = subtotal >= FREE_SHIPPING_ABOVE ? 0 : 60;
+function Summary({
+  subtotal,
+  savings,
+  settings,
+}: {
+  subtotal: number;
+  savings: number;
+  settings: DeliverySettings;
+}) {
+  const isFree = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
+  const shipping = isFree ? 0 : settings.deliveryKerala;
   const total = subtotal + shipping;
 
   return (
@@ -163,8 +173,8 @@ function Summary({ subtotal, savings }: { subtotal: number; savings: number }) {
           </div>
         )}
         <div className="flex justify-between gap-4">
-          <dt className="text-white/75">Shipping</dt>
-          <dd>{shipping === 0 ? "Free" : inr(shipping)}</dd>
+          <dt className="text-white/75">Delivery</dt>
+          <dd>{isFree ? <span className="font-semibold text-emerald-300">Free</span> : inr(shipping)}</dd>
         </div>
         <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-white/25 pt-5">
           <dt className="text-lg">Total</dt>
@@ -217,6 +227,15 @@ export default function CartPage() {
   const { user, token, refreshCartCount } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({
+    deliveryKerala: 40,
+    deliveryNational: 70,
+    freeShippingThreshold: 999,
+  });
+
+  useEffect(() => {
+    api.getDeliverySettings().then(setDeliverySettings).catch(() => {});
+  }, []);
 
   const fetchCart = useCallback(async () => {
     if (!token) {
@@ -272,7 +291,8 @@ export default function CartPage() {
     }
   };
 
-  const count = items.reduce((n, i) => n + i.quantity, 0);
+  // Count distinct/different items, not summing quantity for the same item
+  const count = items ? new Set(items.map((i) => i.product_id || i.name)).size : 0;
   const subtotal = items.reduce((n, i) => n + Number(i.price) * i.quantity, 0);
   const savings = items.reduce((n, i) => {
     const mrp = i.mrp ? Number(i.mrp) : Number(i.price);
@@ -322,7 +342,7 @@ export default function CartPage() {
         ) : (
           <div className="grid items-start gap-8 lg:grid-cols-[1.4fr_1fr] lg:gap-10">
             <div className="flex flex-col gap-5">
-              <ShippingProgress subtotal={subtotal} />
+              <ShippingProgress subtotal={subtotal} threshold={deliverySettings.freeShippingThreshold} />
               <ul className="flex flex-col gap-4">
                 {items.map((item) => (
                   <CartRow
@@ -342,7 +362,7 @@ export default function CartPage() {
               </Link>
             </div>
 
-            <Summary subtotal={subtotal} savings={savings} />
+            <Summary subtotal={subtotal} savings={savings} settings={deliverySettings} />
           </div>
         )}
       </section>

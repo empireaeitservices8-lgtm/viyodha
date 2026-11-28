@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Cormorant_Garamond } from "next/font/google";
-import { api, getImageUrl, CartItem } from "@/lib/api";
+import { api, getImageUrl, CartItem, DeliverySettings } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { BilingualName } from "@/components/BilingualName";
 import { toast } from "sonner";
@@ -73,6 +73,16 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState("cod");
   const [placedOrder, setPlacedOrder] = useState<{ id: number; name: string } | null>(null);
   const [error, setError] = useState("");
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({
+    deliveryKerala: 40,
+    deliveryNational: 70,
+    freeShippingThreshold: 999,
+  });
+
+  // Load dynamic delivery settings from backend
+  useEffect(() => {
+    api.getDeliverySettings().then(setDeliverySettings).catch(() => {});
+  }, []);
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -119,7 +129,12 @@ export default function CheckoutPage() {
     const mrp = i.mrp ? Number(i.mrp) : Number(i.price);
     return n + Math.max(0, mrp - Number(i.price)) * i.quantity;
   }, 0);
-  const shipping = subtotal >= FREE_SHIPPING_ABOVE || subtotal === 0 ? 0 : SHIPPING_FEE;
+
+  // Delivery charge: Kerala vs. Outside Kerala (dynamic based on admin settings)
+  const isKerala = state.trim().toLowerCase() === "kerala";
+  const applicableRate = isKerala ? deliverySettings.deliveryKerala : deliverySettings.deliveryNational;
+  const isFreeShipping = deliverySettings.freeShippingThreshold > 0 && subtotal >= deliverySettings.freeShippingThreshold;
+  const shipping = isFreeShipping || subtotal === 0 ? 0 : applicableRate;
   const total = subtotal + shipping;
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -347,6 +362,12 @@ export default function CheckoutPage() {
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  <p className="mt-1.5 text-xs font-semibold text-[#1F4D1F]">
+                    🚚 Delivery: ₹{applicableRate}
+                    {deliverySettings.freeShippingThreshold > 0 && (
+                      <span className="font-normal text-[#141414]/65"> • Free above ₹{deliverySettings.freeShippingThreshold}</span>
+                    )}
+                  </p>
                 </Field>
                 <Field label="PIN code">
                   <input
@@ -468,8 +489,14 @@ export default function CheckoutPage() {
                 </div>
               )}
               <div className="flex justify-between gap-4">
-                <dt className="text-white/75">Shipping</dt>
-                <dd>{shipping === 0 ? "Free" : inr(shipping)}</dd>
+                <dt className="text-white/75">Delivery</dt>
+                <dd>
+                  {shipping === 0 ? (
+                    <span className="font-semibold text-emerald-300">Free</span>
+                  ) : (
+                    inr(shipping)
+                  )}
+                </dd>
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-white/25 pt-5">
                 <dt className="text-lg">Total</dt>

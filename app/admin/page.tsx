@@ -24,7 +24,56 @@ const field =
 export default function AdminPage() {
   const { user, token, loading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"products" | "orders" | "users">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "orders" | "users" | "delivery">("products");
+
+  // Delivery Settings state
+  const [deliveryKerala, setDeliveryKerala] = useState("40");
+  const [deliveryNational, setDeliveryNational] = useState("70");
+  const [freeThreshold, setFreeThreshold] = useState("999");
+  const [loadingDelivery, setLoadingDelivery] = useState(true);
+  const [savingDelivery, setSavingDelivery] = useState(false);
+
+  const loadDeliverySettings = useCallback(async () => {
+    try {
+      setLoadingDelivery(true);
+      const s = await api.getDeliverySettings();
+      setDeliveryKerala(String(s.deliveryKerala));
+      setDeliveryNational(String(s.deliveryNational));
+      setFreeThreshold(String(s.freeShippingThreshold));
+    } catch (err) {
+      console.error("Failed to load delivery settings:", err);
+    } finally {
+      setLoadingDelivery(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeliverySettings();
+  }, [loadDeliverySettings]);
+
+  const handleSaveDelivery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingDelivery(true);
+    try {
+      const updated = await api.updateDeliverySettings(
+        {
+          deliveryKerala: Math.max(0, parseFloat(deliveryKerala) || 0),
+          deliveryNational: Math.max(0, parseFloat(deliveryNational) || 0),
+          freeShippingThreshold: Math.max(0, parseFloat(freeThreshold) || 0),
+        },
+        token || undefined
+      );
+      setDeliveryKerala(String(updated.deliveryKerala));
+      setDeliveryNational(String(updated.deliveryNational));
+      setFreeThreshold(String(updated.freeShippingThreshold));
+      showMsg("Delivery charges updated successfully! New rates are now active on the store.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update delivery settings";
+      showMsg(msg, "error");
+    } finally {
+      setSavingDelivery(false);
+    }
+  };
 
   // Products state
   const [products, setProducts] = useState<Product[]>([]);
@@ -480,6 +529,16 @@ export default function AdminPage() {
               }`}
           >
             👥 Users ({customerUsers.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("delivery")}
+            className={`px-6 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === "delivery"
+              ? "border-[#1F4D1F] text-[#1F4D1F]"
+              : "border-transparent text-[#141414]/60 hover:text-[#1F4D1F]"
+              }`}
+          >
+            🚚 Delivery Charges (₹{deliveryKerala} / ₹{deliveryNational})
           </button>
         </div>
 
@@ -1113,6 +1172,166 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ===================== TAB 4: DELIVERY CHARGES ===================== */}
+        {activeTab === "delivery" && (
+          <div className="rounded-[2rem] border border-[#1F4D1F]/15 bg-white p-6 sm:p-10 shadow-sm">
+            <div className="mb-8 border-b border-[#1F4D1F]/15 pb-6">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🚚</span>
+                <h2 className={`${serif.className} text-3xl font-semibold text-[#1F4D1F]`}>
+                  Delivery Charges & Shipping Rates
+                </h2>
+              </div>
+              <p className="mt-1 text-sm text-[#141414]/70">
+                Configure delivery rates for customer orders based on their shipping location (Within Kerala vs. Rest of India).
+              </p>
+            </div>
+
+            {loadingDelivery ? (
+              <div className="py-12 text-center text-sm text-[#1F4D1F]">Loading delivery settings...</div>
+            ) : (
+              <form onSubmit={handleSaveDelivery} className="max-w-3xl flex flex-col gap-8">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {/* Inside Kerala */}
+                  <div className="rounded-2xl border border-emerald-300 bg-emerald-50/50 p-6 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-[#1F4D1F] px-3 py-1 text-xs font-bold text-white">
+                        🌴 Within Kerala
+                      </span>
+                      <span className="text-xl font-bold text-[#1F4D1F]">
+                        ₹{deliveryKerala || 0}
+                      </span>
+                    </div>
+                    <label className="text-sm font-semibold text-[#141414]">
+                      Delivery Charge for Kerala (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#141414]/50">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={deliveryKerala}
+                        onChange={(e) => setDeliveryKerala(e.target.value)}
+                        placeholder="40"
+                        className={`${field} pl-8 font-semibold text-base`}
+                      />
+                    </div>
+                    <p className="text-xs text-[#141414]/65">
+                      Applied to all deliveries within Kerala (default: ₹40).
+                    </p>
+                  </div>
+
+                  {/* Outside Kerala / Rest of India */}
+                  <div className="rounded-2xl border border-amber-300 bg-amber-50/50 p-6 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-amber-800 px-3 py-1 text-xs font-bold text-white">
+                        🇮🇳 Outside Kerala (Rest of India)
+                      </span>
+                      <span className="text-xl font-bold text-amber-900">
+                        ₹{deliveryNational || 0}
+                      </span>
+                    </div>
+                    <label className="text-sm font-semibold text-[#141414]">
+                      Delivery Charge for Rest of India (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#141414]/50">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={deliveryNational}
+                        onChange={(e) => setDeliveryNational(e.target.value)}
+                        placeholder="70"
+                        className={`${field} pl-8 font-semibold text-base`}
+                      />
+                    </div>
+                    <p className="text-xs text-[#141414]/65">
+                      Applied to all other states across India (default: ₹70).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Free Shipping Threshold */}
+                <div className="rounded-2xl border border-[#1F4D1F]/20 bg-white p-6 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-[#1F4D1F]">
+                      ✨ Free Delivery Order Value (₹)
+                    </span>
+                    <span className="text-sm font-medium text-[#141414]/70">
+                      Orders ≥ ₹{freeThreshold || 0} receive FREE delivery
+                    </span>
+                  </div>
+                  <div className="relative max-w-sm">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#141414]/50">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      value={freeThreshold}
+                      onChange={(e) => setFreeThreshold(e.target.value)}
+                      placeholder="999"
+                      className={`${field} pl-8 font-semibold text-base`}
+                    />
+                  </div>
+                  <p className="text-xs text-[#141414]/65">
+                    Orders with subtotal equal or greater than this value get free delivery automatically. Set to 0 to disable free shipping.
+                  </p>
+                </div>
+
+                {/* Summary / Preview Box */}
+                <div className="rounded-2xl border border-dashed border-[#1F4D1F]/30 bg-[#EEF3EA]/50 p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1F4D1F] mb-3">
+                    Customer Experience Preview:
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2 text-sm">
+                    <div className="bg-white rounded-xl p-3 border border-[#1F4D1F]/15">
+                      <p className="font-semibold text-[#141414]">Customer in Kerala (e.g. Kochi):</p>
+                      <p className="text-xs text-[#141414]/70 mt-1">
+                        Delivery fee: <strong>₹{deliveryKerala || 0}</strong> (Free on orders ₹{freeThreshold}+)
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-3 border border-[#1F4D1F]/15">
+                      <p className="font-semibold text-[#141414]">Customer Outside Kerala (e.g. Bangalore, Delhi):</p>
+                      <p className="text-xs text-[#141414]/70 mt-1">
+                        Delivery fee: <strong>₹{deliveryNational || 0}</strong> (Free on orders ₹{freeThreshold}+)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex items-center gap-4 pt-2">
+                  <button
+                    type="submit"
+                    disabled={savingDelivery}
+                    className="rounded-full bg-[#1F4D1F] px-8 py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {savingDelivery ? "Saving Settings..." : "Save Delivery Charges"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadDeliverySettings}
+                    className="rounded-full border border-[#1F4D1F]/30 px-6 py-3.5 text-sm font-semibold text-[#141414]/70 hover:bg-[#EEF3EA]"
+                  >
+                    Reset Changes
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         )}

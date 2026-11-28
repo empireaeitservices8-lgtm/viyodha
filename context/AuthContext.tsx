@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { api, User } from "@/lib/api";
+import { api, User, CartItem } from "@/lib/api";
 
 type AuthContextType = {
   user: User | null;
@@ -16,6 +16,11 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function getDistinctCartCount(items: CartItem[] | null | undefined): number {
+  if (!items || !Array.isArray(items) || items.length === 0) return 0;
+  return new Set(items.map((item) => item.product_id || item.name)).size;
+}
 
 function setAuthCookies(token: string, role: string) {
   if (typeof document !== "undefined") {
@@ -45,8 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const items = await api.getCart(savedToken);
-      const count = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      setCartCount(count);
+      setCartCount(getDistinctCartCount(items));
     } catch {
       setCartCount(0);
     }
@@ -95,8 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return api.getCart(savedToken);
         })
         .then((items) => {
-          const count = items ? items.reduce((sum, item) => sum + (item.quantity || 1), 0) : 0;
-          setCartCount(count);
+          setCartCount(getDistinctCartCount(items));
         })
         .catch((err: unknown) => {
           const errorMsg = err instanceof Error ? err.message.toLowerCase() : "";
@@ -131,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     try {
       const items = await api.getCart(data.token);
-      setCartCount(items.reduce((sum, item) => sum + (item.quantity || 1), 0));
+      setCartCount(getDistinctCartCount(items));
     } catch {
       setCartCount(0);
     }

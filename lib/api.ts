@@ -123,6 +123,12 @@ export type Review = {
   updated_at?: string;
 };
 
+export type DeliverySettings = {
+  deliveryKerala: number;
+  deliveryNational: number;
+  freeShippingThreshold: number;
+};
+
 export type CartItem = {
   cart_id: number;
   quantity: number;
@@ -541,5 +547,49 @@ export const api = {
       body: JSON.stringify(data),
     });
     return handleResponse<{ success: boolean; message: string }>(res, "Failed to send message");
+  },
+
+  // Delivery Settings
+  async getDeliverySettings(): Promise<DeliverySettings> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/settings/delivery`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (data && data.success && data.settings) {
+        return {
+          deliveryKerala: Number(data.settings.deliveryKerala),
+          deliveryNational: Number(data.settings.deliveryNational),
+          freeShippingThreshold: Number(data.settings.freeShippingThreshold),
+        };
+      }
+    } catch (err) {
+      console.warn("Could not fetch delivery settings from server, using defaults:", err);
+    }
+    return {
+      deliveryKerala: 40,
+      deliveryNational: 70,
+      freeShippingThreshold: 999,
+    };
+  },
+
+  async updateDeliverySettings(
+    settings: { deliveryKerala: number; deliveryNational: number; freeShippingThreshold?: number },
+    token?: string
+  ): Promise<DeliverySettings> {
+    const res = await fetch(`${API_BASE_URL}/settings/delivery`, {
+      method: "PUT",
+      headers: getAuthHeaders(token),
+      body: JSON.stringify(settings),
+    });
+    const data = await handleResponse<{ success: boolean; message: string; settings: any }>(
+      res,
+      "Failed to update delivery settings"
+    );
+    return {
+      deliveryKerala: Number(data.settings.deliveryKerala),
+      deliveryNational: Number(data.settings.deliveryNational),
+      freeShippingThreshold: Number(data.settings.freeShippingThreshold),
+    };
   },
 };
